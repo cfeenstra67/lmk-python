@@ -1,0 +1,3 @@
+MODULE_NAME = "lmk"
+
+MODULE_VERSION = "^0.0.1"

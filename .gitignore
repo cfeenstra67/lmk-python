@@ -1,0 +1,9 @@
+/dist
+/lib
+/node_modules
+/venv
+__pycache__
+*.pyc
+/lmk/generated
+/lmk/jupyter/labextension
+/lmk/jupyter/nbextension
