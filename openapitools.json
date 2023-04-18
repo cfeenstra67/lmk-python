@@ -7,7 +7,7 @@
       "client": {
         "generatorName": "python-nextgen",
         "output": "#{cwd}",
-        "glob": "../api/openapi.yaml",
+        "glob": "openapi.yaml",
         "globalProperty": {
           "apiTests": false,
           "apiDocs": false,

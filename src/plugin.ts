@@ -1,12 +1,12 @@
-import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
-import { Application, IPlugin } from '@lumino/application';
-import { Widget } from '@lumino/widgets';
+import { IJupyterWidgetRegistry } from "@jupyter-widgets/base";
+import { Application, IPlugin } from "@lumino/application";
+import { Widget } from "@lumino/widgets";
 
-import { LMKModel } from './lib/widget-model';
-import { LMKView } from './widget';
-import { MODULE_NAME, MODULE_VERSION } from './version';
+import { LMKModel } from "./lib/widget-model";
+import { LMKView } from "./widget";
+import { MODULE_NAME, MODULE_VERSION } from "./version";
 
-const EXTENSION_ID = 'lmk:plugin';
+const EXTENSION_ID = "@lmk/jupyter-widget:plugin";
 
 const lmkPlugin: IPlugin<Application<Widget>, void> = {
   id: EXTENSION_ID,
@@ -22,7 +22,7 @@ export default lmkPlugin;
  */
 function activateWidgetExtension(
   app: Application<Widget>,
-  registry: IJupyterWidgetRegistry,
+  registry: IJupyterWidgetRegistry
 ): void {
   registry.registerWidget({
     name: MODULE_NAME,

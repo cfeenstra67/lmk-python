@@ -1,0 +1,1169 @@
+openapi: 3.0.0
+paths:
+  /v1/app:
+    post:
+      operationId: createApp
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnedAppResponse'
+      tags:
+        - app
+  /v1/app/current:
+    get:
+      operationId: getCurrentApp
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppResponse'
+      tags:
+        - app
+  /v1/app/connected:
+    get:
+      operationId: getConnectedApps
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListConnectedAppsResponse'
+      tags:
+        - app
+  /v1/app/disconnect/{connectionId}:
+    delete:
+      operationId: disconnectConnection
+      parameters:
+        - name: connectionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+        - app
+  /v1/app/disconnectApp/{appId}:
+    delete:
+      operationId: disconnectApp
+      parameters:
+        - name: appId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+        - app
+  /a/callback:
+    get:
+      operationId: headlessRedirectCallback
+      parameters:
+        - name: state
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: code
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+        - headlessAuth
+  /a/{urlId}:
+    get:
+      operationId: getHeadlessAuthRedirect
+      parameters:
+        - name: urlId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+        - headlessAuth
+  /v1/headlessAuth:
+    post:
+      operationId: createHeadlessAuthSession
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHeadlessAuthSessionRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeadlessAuthSessionResponse'
+      tags:
+        - headlessAuth
+  /v1/headlessAuth/{sessionId}:
+    get:
+      operationId: getHeadlessAuthSession
+      parameters:
+        - name: sessionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeadlessAuthSessionResponse'
+      tags:
+        - headlessAuth
+  /v1/headlessAuth/{sessionId}/token:
+    get:
+      operationId: retrieveHeadlessAuthSessionToken
+      parameters:
+        - name: sessionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+      tags:
+        - headlessAuth
+  /v1/headlessAuth/refresh:
+    post:
+      operationId: refreshHeadlessAuthToken
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeadlessAuthRefreshTokenRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+      tags:
+        - headlessAuth
+  /oauth/initiate:
+    post:
+      operationId: initiateOauth
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateOauthRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateOauthResponse'
+      tags:
+        - oauth
+  /oauth/authorize:
+    post:
+      operationId: authorize
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthorizeOauthRequest'
+      responses:
+        '201':
+          description: ''
+      tags:
+        - oauth
+  /oauth/token:
+    post:
+      operationId: token
+      parameters:
+        - name: authorization
+          required: true
+          in: header
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessTokenRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+      tags:
+        - oauth
+  /v1/user:
+    post:
+      operationId: createUser
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUserResponse'
+      tags:
+        - user
+  /v1/user/current:
+    get:
+      operationId: getCurrentUser
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+      tags:
+        - user
+    patch:
+      operationId: updateCurrentUser
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+      tags:
+        - user
+  /v1/auth/setPassword:
+    post:
+      operationId: setPassword
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+      tags:
+        - auth
+  /v1/auth/login:
+    post:
+      operationId: loginUser
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+      tags:
+        - auth
+  /v1/auth/refreshToken:
+    post:
+      operationId: refreshToken
+      parameters: []
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+      tags:
+        - auth
+  /v1/event:
+    post:
+      operationId: postEvent
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+      tags:
+        - event
+    get:
+      operationId: searchEvents
+      parameters:
+        - name: query
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: continuationToken
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventsResponse'
+      tags:
+        - event
+  /v1/session:
+    post:
+      operationId: createSession
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+      tags:
+        - session
+  /v1/notificationChannel:
+    post:
+      operationId: createNotificationChannel
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationChannelRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelResponse'
+      tags:
+        - notification
+    get:
+      operationId: listNotificationChannels
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelsResponse'
+      tags:
+        - notification
+  /v1/notificationChannel/reorder:
+    post:
+      operationId: reorderNotificationChannels
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderNotificationChannelsRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelsResponse'
+      tags:
+        - notification
+  /v1/notificationChannel/{channelId}:
+    get:
+      operationId: getNotificationChannel
+      parameters:
+        - name: channelId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelResponse'
+      tags:
+        - notification
+    patch:
+      operationId: updateNotificationChannel
+      parameters:
+        - name: channelId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationChannelRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelResponse'
+      tags:
+        - notification
+    delete:
+      operationId: deleteNotificationChannel
+      parameters:
+        - name: channelId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelResponse'
+      tags:
+        - notification
+  /healthcheck:
+    get:
+      operationId: healthcheck
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+      tags:
+        - healthcheck
+info:
+  title: LMK API
+  description: ''
+  version: 0.0.1
+  contact: {}
+tags:
+  - name: user
+    description: Endpoints related to user management
+servers: []
+components:
+  schemas:
+    CreateAppRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        redirectUris:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        iconUrl:
+          type: string
+        introWarningMarkdown:
+          type: string
+      required:
+        - name
+        - redirectUris
+        - description
+        - iconUrl
+    OwnedAppResponse:
+      type: object
+      properties:
+        appId:
+          type: string
+        name:
+          type: string
+        iconUrl:
+          type: string
+        description:
+          type: string
+        introWarningMarkdown:
+          type: string
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        redirectUris:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+        lastUpdatedAt:
+          type: string
+      required:
+        - appId
+        - name
+        - iconUrl
+        - description
+        - clientId
+        - clientSecret
+        - redirectUris
+        - createdAt
+        - lastUpdatedAt
+    AppResponse:
+      type: object
+      properties:
+        appId:
+          type: string
+        name:
+          type: string
+        iconUrl:
+          type: string
+        description:
+          type: string
+        introWarningMarkdown:
+          type: string
+        createdAt:
+          type: string
+        lastUpdatedAt:
+          type: string
+      required:
+        - appId
+        - name
+        - iconUrl
+        - description
+        - createdAt
+        - lastUpdatedAt
+    AppConnectionResponse:
+      type: object
+      properties:
+        connectionId:
+          type: string
+        scope:
+          type: string
+        createdAt:
+          type: string
+        expiresAt:
+          type: string
+      required:
+        - connectionId
+        - scope
+        - createdAt
+    ListConnectedAppsItemResponse:
+      type: object
+      properties:
+        app:
+          $ref: '#/components/schemas/AppResponse'
+        connections:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppConnectionResponse'
+      required:
+        - app
+        - connections
+    ListConnectedAppsResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListConnectedAppsItemResponse'
+      required:
+        - results
+    CreateHeadlessAuthSessionRequest:
+      type: object
+      properties:
+        appId:
+          type: string
+        scope:
+          type: string
+      required:
+        - appId
+        - scope
+    HeadlessAuthSessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        appId:
+          type: string
+        scope:
+          type: string
+        authorizeUrl:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - sessionId
+        - appId
+        - scope
+        - authorizeUrl
+        - createdAt
+    AccessTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: number
+        scope:
+          type: string
+        refresh_token:
+          type: string
+      required:
+        - access_token
+        - token_type
+        - expires_in
+        - scope
+    HeadlessAuthRefreshTokenRequest:
+      type: object
+      properties:
+        appId:
+          type: string
+        refreshToken:
+          type: string
+      required:
+        - appId
+        - refreshToken
+    InitiateOauthRequest:
+      type: object
+      properties:
+        client_id:
+          type: string
+        response_type:
+          type: string
+        redirect_uri:
+          type: string
+        scope:
+          type: string
+          pattern: /[\w\-:]+( [\w\-:])*/
+        state:
+          type: string
+      required:
+        - client_id
+        - response_type
+        - redirect_uri
+        - scope
+        - state
+    OauthError:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - INVALID_REDIRECT_URI
+            - UNKNOWN_CLIENT
+            - INVALID_SCOPE
+            - STATE_TOO_LONG
+            - INVALID_QUERY_PARAMETERS
+            - UNKNOWN
+            - INVALID_CLIENT_SECRET
+            - INVALID_AUTHORIZATION_CODE
+            - MALFORMED_ACCESS_TOKEN
+            - MALFORMED_REFRESH_TOKEN
+            - INVALID_REFRESH_TOKEN
+            - INVALID_RESPONSE_TYPE
+      required:
+        - type
+    InitiateOauthResponse:
+      type: object
+      properties:
+        appName:
+          type: string
+        iconUrl:
+          type: string
+        description:
+          type: string
+        introWarningMarkdown:
+          type: string
+        csrfToken:
+          type: string
+      required:
+        - appName
+        - iconUrl
+        - description
+        - csrfToken
+    AuthorizeOauthRequest:
+      type: object
+      properties:
+        client_id:
+          type: string
+        response_type:
+          type: string
+        redirect_uri:
+          type: string
+        scope:
+          type: string
+          pattern: /[\w\-:]+( [\w\-:])*/
+        state:
+          type: string
+        notification_channels:
+          type: string
+        token:
+          type: string
+        csrf_token:
+          type: string
+      required:
+        - client_id
+        - response_type
+        - redirect_uri
+        - scope
+        - state
+        - token
+        - csrf_token
+    AccessTokenRequest:
+      type: object
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - authorization_code
+            - refresh_token
+        redirect_uri:
+          type: string
+        code:
+          type: string
+        refresh_token:
+          type: string
+      required:
+        - grant_type
+        - redirect_uri
+        - code
+        - refresh_token
+    CreateUserRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+      required:
+        - fullName
+        - email
+    CreateUserResponse:
+      type: object
+      properties:
+        setPasswordToken:
+          type: string
+        userId:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+        lastUpdatedAt:
+          type: string
+      required:
+        - setPasswordToken
+        - userId
+        - fullName
+        - email
+        - createdAt
+        - lastUpdatedAt
+    UserResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+        lastUpdatedAt:
+          type: string
+      required:
+        - userId
+        - fullName
+        - email
+        - createdAt
+        - lastUpdatedAt
+    UpdateUserRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+    SetPasswordRequest:
+      type: object
+      properties:
+        setPasswordToken:
+          type: string
+        password:
+          type: string
+      required:
+        - setPasswordToken
+        - password
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expires:
+          type: string
+      required:
+        - token
+        - expires
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+    EventNotificationConfiguration:
+      type: object
+      properties:
+        notify:
+          type: boolean
+        channelIds:
+          type: array
+          items:
+            type: string
+      required:
+        - notify
+    EventRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        message:
+          type: string
+        contentType:
+          type: string
+          enum:
+            - text/plain
+            - text/markdown
+        notificationConfig:
+          $ref: '#/components/schemas/EventNotificationConfiguration'
+      required:
+        - message
+    ActorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - USER
+            - APP
+            - ANONYMOUS
+        actorId:
+          type: string
+        iconUrl:
+          type: string
+        name:
+          type: string
+      required:
+        - type
+        - actorId
+        - name
+    NotificationChannelInfo:
+      type: object
+      properties:
+        notificationChannelId:
+          type: string
+        type:
+          type: string
+          enum:
+            - email
+            - text-message
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - PENDING
+            - DELIVERED
+            - FAILED
+      required:
+        - notificationChannelId
+        - type
+        - name
+        - status
+    EventResponse:
+      type: object
+      properties:
+        eventId:
+          type: string
+        sessionId:
+          type: string
+        userId:
+          type: string
+        actor:
+          $ref: '#/components/schemas/ActorResponse'
+        message:
+          type: string
+        contentType:
+          type: string
+          enum:
+            - text/plain
+            - text/markdown
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationChannelInfo'
+        createdAt:
+          type: string
+      required:
+        - eventId
+        - userId
+        - actor
+        - message
+        - contentType
+        - channels
+        - createdAt
+    EventsResponse:
+      type: object
+      properties:
+        total:
+          type: number
+        continuationToken:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventResponse'
+      required:
+        - total
+        - events
+    CreateSessionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        namePrefix:
+          type: string
+    SessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+        lastUpdatedAt:
+          type: string
+      required:
+        - sessionId
+        - name
+        - createdAt
+        - lastUpdatedAt
+    EmailChannelPayload:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - email
+        emailAddress:
+          type: string
+      required:
+        - type
+        - emailAddress
+    TextMessageChannelPayload:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - text-message
+        phoneNumber:
+          type: string
+      required:
+        - type
+        - phoneNumber
+    CreateNotificationChannelRequest:
+      type: object
+      properties:
+        payload:
+          oneOf:
+            - $ref: '#/components/schemas/EmailChannelPayload'
+            - $ref: '#/components/schemas/TextMessageChannelPayload'
+          discriminator:
+            propertyName: type
+            mapping:
+              email: '#/components/schemas/EmailChannelPayload'
+              text-message: '#/components/schemas/TextMessageChannelPayload'
+        name:
+          type: string
+        order:
+          type: number
+      required:
+        - payload
+        - name
+    NotificationChannelResponse:
+      type: object
+      properties:
+        payload:
+          oneOf:
+            - $ref: '#/components/schemas/EmailChannelPayload'
+            - $ref: '#/components/schemas/TextMessageChannelPayload'
+          discriminator:
+            propertyName: type
+            mapping:
+              email: '#/components/schemas/EmailChannelPayload'
+              text-message: '#/components/schemas/TextMessageChannelPayload'
+        notificationChannelId:
+          type: string
+        name:
+          type: string
+        order:
+          type: number
+        isDefault:
+          type: boolean
+        isManaged:
+          type: boolean
+        createdAt:
+          type: string
+        createdByActor:
+          $ref: '#/components/schemas/ActorResponse'
+        lastUpdatedAt:
+          type: string
+        lastUpdatedByActor:
+          $ref: '#/components/schemas/ActorResponse'
+      required:
+        - payload
+        - notificationChannelId
+        - name
+        - order
+        - isDefault
+        - isManaged
+        - createdAt
+        - createdByActor
+        - lastUpdatedAt
+        - lastUpdatedByActor
+    NotificationChannelsResponse:
+      type: object
+      properties:
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationChannelResponse'
+      required:
+        - channels
+    ReorderNotificationChannelsRequestItem:
+      type: object
+      properties:
+        notificationChannelId:
+          type: string
+        order:
+          type: number
+      required:
+        - notificationChannelId
+        - order
+    ReorderNotificationChannelsRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReorderNotificationChannelsRequestItem'
+      required:
+        - items
+    UpdateNotificationChannelRequest:
+      type: object
+      properties:
+        payload:
+          oneOf:
+            - $ref: '#/components/schemas/EmailChannelPayload'
+            - $ref: '#/components/schemas/TextMessageChannelPayload'
+          discriminator:
+            propertyName: type
+            mapping:
+              email: '#/components/schemas/EmailChannelPayload'
+              text-message: '#/components/schemas/TextMessageChannelPayload'
+        name:
+          type: string
+        order:
+          type: number

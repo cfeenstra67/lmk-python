@@ -1,9 +1,6 @@
-import {
-  DOMWidgetModel,
-  ISerializers,
-} from '@jupyter-widgets/base';
-import { createModelContext } from '../hooks/model';
-import { MODULE_NAME, MODULE_VERSION } from '../version';
+import { DOMWidgetModel, ISerializers } from "@jupyter-widgets/base";
+import { createModelContext } from "../hooks/model";
+import { MODULE_NAME, MODULE_VERSION } from "../version";
 
 export interface NotificationChannel {
   notificationChannelId: string;
@@ -19,26 +16,26 @@ export interface Notification {
   eventId: string;
   channels: {
     notificationChannelId: string;
-    type: 'email' | 'text-message';
+    type: "email" | "text-message";
     name: string;
   }[];
 }
 
 export interface ILMKModel {
-  state: 'needs-auth' | 'auth-in-progress' | 'auth-error' | 'authenticated';
+  state: "needs-auth" | "auth-in-progress" | "auth-error" | "authenticated";
   url: string;
   notebook_name: string;
   auth_url: string;
-  jupyter_state: 'idle' | 'running';
+  jupyter_state: "idle" | "running";
   jupyter_execution_num: number;
-  jupyter_cell_state: 'none' | 'running' | 'error' | 'success' | 'cancelled';
+  jupyter_cell_state: "none" | "running" | "error" | "success" | "cancelled";
   jupyter_cell_started_at: number;
   jupyter_cell_finished_at: number;
   jupyter_cell_error: string;
-  monitoring_state: 'none' | 'error' | 'stop';
+  monitoring_state: "none" | "error" | "stop";
   notify_min_execution: number;
   notify_min_time: number;
-  channels_state: 'none' | 'loading' | 'forbidden' | 'loaded' | 'error';
+  channels_state: "none" | "loading" | "forbidden" | "loaded" | "error";
   selected_channel: string;
   channels: NotificationChannel[];
   sent_notifications: Notification[];
@@ -53,15 +50,16 @@ export const {
 } = createModelContext<ILMKModel>();
 
 export function useMonitoringState(): [
-  ILMKModel['monitoring_state'],
-  (state: ILMKModel['monitoring_state']) => void
+  ILMKModel["monitoring_state"],
+  (state: ILMKModel["monitoring_state"]) => void
 ] {
-  const [monitoringState, setMonitoringState] = useWidgetModelState('monitoring_state');
-  const setNotifyMinExecution = useWidgetModelState('notify_min_execution')[1];
-  const setNotifyMinTime = useWidgetModelState('notify_min_time')[1];
-  const [jupyterExecutionNum] = useWidgetModelState('jupyter_execution_num');
+  const [monitoringState, setMonitoringState] =
+    useWidgetModelState("monitoring_state");
+  const setNotifyMinExecution = useWidgetModelState("notify_min_execution")[1];
+  const setNotifyMinTime = useWidgetModelState("notify_min_time")[1];
+  const [jupyterExecutionNum] = useWidgetModelState("jupyter_execution_num");
 
-  const setState = (state: ILMKModel['monitoring_state']) => {
+  const setState = (state: ILMKModel["monitoring_state"]) => {
     setMonitoringState(state);
     setNotifyMinTime(Date.now());
     setNotifyMinExecution(jupyterExecutionNum);
@@ -71,22 +69,22 @@ export function useMonitoringState(): [
 }
 
 const defaultModelProperties: ILMKModel = {
-  state: 'needs-auth',
-  url: '',
-  notebook_name: '',
-  auth_url: '',
-  jupyter_state: 'idle',
+  state: "needs-auth",
+  url: "",
+  notebook_name: "",
+  auth_url: "",
+  jupyter_state: "idle",
   jupyter_execution_num: -1,
-  jupyter_cell_state: 'none',
+  jupyter_cell_state: "none",
   jupyter_cell_started_at: -1,
   jupyter_cell_finished_at: -1,
-  jupyter_cell_error: '',
-  monitoring_state: 'none',
+  jupyter_cell_error: "",
+  monitoring_state: "none",
   notify_min_execution: -1,
   notify_min_time: -1,
-  channels_state: 'none',
+  channels_state: "none",
   channels: [],
-  selected_channel: 'default',
+  selected_channel: "default",
   sent_notifications: [],
 };
 
@@ -109,10 +107,10 @@ export class LMKModel extends DOMWidgetModel {
     // Add any extra serializers here
   };
 
-  static model_name = 'LMKModel';
+  static model_name = "LMKModel";
   static model_module = MODULE_NAME;
   static model_module_version = MODULE_VERSION;
-  static view_name = 'LMKView'; // Set to null if no view
+  static view_name = "LMKView"; // Set to null if no view
   static view_module = MODULE_NAME; // Set to null if no view
   static view_module_version = MODULE_VERSION;
 }

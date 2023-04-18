@@ -7,7 +7,14 @@ from lmk.jupyter import (
 
 __version__ = "0.0.1"
 
-__all__ = ["__version__", "jupyter", "get_instance", "set_instance"]
+__all__ = [
+    "__version__",
+    "jupyter",
+    "get_instance",
+    "set_instance",
+    "_jupyter_labextension_paths",
+    "_jupyter_nbextension_paths",
+]
 __all__ += methods.__all__
 
 

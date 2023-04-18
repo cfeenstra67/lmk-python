@@ -1,9 +1,9 @@
-import { DOMWidgetView } from '@jupyter-widgets/base';
-import { createElement } from 'react';
-import ReactDOM from 'react-dom';
+import { DOMWidgetView } from "@jupyter-widgets/base";
+import { createElement } from "react";
+import ReactDOM from "react-dom";
 
-import Widget from './components/Widget';
-import { WidgetViewProvider } from './lib/widget-model';
+import Widget from "./components/Widget";
+import { WidgetViewProvider } from "./lib/widget-model";
 
 export class LMKView extends DOMWidgetView {
   render() {

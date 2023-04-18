@@ -3,13 +3,10 @@ include README.md
 
 include setup.py
 include pyproject.toml
-include pytest.ini
-include .coverage.rc
 
 include tsconfig.json
 include package.json
 include webpack.config.js
-include lmk/labextension/*.tgz
 
 # Documentation
 graft docs
@@ -18,14 +15,8 @@ prune docs/build
 prune docs/gh-pages
 prune docs/dist
 
-# Examples
-graft examples
-
-# Tests
-graft tests
-prune tests/build
-
 # Javascript files
+graft lmk/labextension
 graft lmk/nbextension
 graft src
 graft css

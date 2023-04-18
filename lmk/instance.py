@@ -227,7 +227,7 @@ class Instance:
                 )
             if self.server_url is None:
                 self.server_url = section.get("server_url", self.server_url)
-        
+
         if self.server_url is None:
             self.server_url = API_URL
 

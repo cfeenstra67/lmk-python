@@ -1,6 +1,11 @@
 const path = require('path');
 const tailwindcss = require('tailwindcss');
-const version = require('./package.json').version;
+
+const pkg = require('./package.json');
+
+const version = pkg.version;
+
+const name = pkg.name;
 
 function rules(type) {
   return [
@@ -88,9 +93,9 @@ module.exports = [
     mode,
     entry: './src/extension.ts',
     output: {
-      filename: 'lmk.js',
-      path: path.resolve(__dirname, 'lmk', 'jupyter', 'nbextension'),
-      library: 'lmk',
+      filename: 'jupyter-widget.js',
+      path: path.resolve(__dirname, 'lmk', 'jupyter', 'nbextension', '@lmk'),
+      library: name,
       libraryTarget: 'amd',
       publicPath: '',
     },
@@ -120,11 +125,11 @@ module.exports = [
         filename: 'index.js',
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'amd',
-        library: "lmk",
+        library: name,
         publicPath: 'https://unpkg.com/lmk@' + version + '/dist/'
     },
     devtool,
-    module: { rules: rules('labextension') },
+    module: { rules: rules('nbextension') },
     externals,
     resolve,
     optimization: {

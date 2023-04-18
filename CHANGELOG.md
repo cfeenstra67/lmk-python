@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2023-04-17
+
+## Changed
+
+- Got both python and npm package builds working and changed name of js package to `@lmk/jupyter-widget`.
+
 ## [0.0.1] - 2023-04-17
 
 ### Added

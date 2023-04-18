@@ -12,8 +12,8 @@ def _jupyter_labextension_paths():
     """
     return [
         {
-            "src": "jupyter/labextension",
-            "dest": "lmk",
+            "src": "jupyter/labextension/@lmk",
+            "dest": "@lmk",
         }
     ]
 
@@ -37,8 +37,8 @@ def _jupyter_nbextension_paths():
     return [
         {
             "section": "notebook",
-            "src": "jupyter/nbextension",
-            "dest": ".",
-            "require": "lmk",
+            "src": "jupyter/nbextension/@lmk",
+            "dest": "@lmk",
+            "require": "@lmk/jupyter-widget",
         }
     ]

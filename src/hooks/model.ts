@@ -1,4 +1,4 @@
-import * as Backbone from 'backbone';
+import * as Backbone from "backbone";
 import {
   createContext,
   useContext,
@@ -6,13 +6,13 @@ import {
   useState,
   DependencyList,
   createElement,
-} from 'react';
-import * as uuid from 'uuid';
-import { WidgetModel } from '@jupyter-widgets/base';
+} from "react";
+import * as uuid from "uuid";
+import { WidgetModel } from "@jupyter-widgets/base";
 
 type ModelCallback = (
   models: WidgetModel,
-  event: Backbone.EventHandler,
+  event: Backbone.EventHandler
 ) => void;
 
 export interface ModelProviderProps {
@@ -26,10 +26,10 @@ export interface ModelContext<T> {
   useModelEvent: (
     event: string,
     callback: ModelCallback,
-    deps?: DependencyList,
+    deps?: DependencyList
   ) => void;
   useModelState: <K extends string & keyof T>(
-    name: K,
+    name: K
   ) => [T[K], (val: T[K]) => void];
   useTransport: () => (method: string, payload: any) => Promise<any>;
 }
@@ -37,14 +37,14 @@ export interface ModelContext<T> {
 export function createModelContext<T>(): ModelContext<T> {
   const ctx = createContext<WidgetModel | undefined>(undefined);
 
-  const useModel: ModelContext<T>['useModel'] = () => {
+  const useModel: ModelContext<T>["useModel"] = () => {
     return useContext(ctx);
   };
 
-  const useModelEvent: ModelContext<T>['useModelEvent'] = (
+  const useModelEvent: ModelContext<T>["useModelEvent"] = (
     event,
     callback,
-    deps,
+    deps
   ) => {
     const model = useModel();
 
@@ -56,10 +56,10 @@ export function createModelContext<T>(): ModelContext<T> {
     }, dependencies);
   };
 
-  const useModelState: ModelContext<T>['useModelState'] = <
-    K extends string & keyof T,
+  const useModelState: ModelContext<T>["useModelState"] = <
+    K extends string & keyof T
   >(
-    name: K,
+    name: K
   ) => {
     const model = useModel();
     const [state, setState] = useState<T[K]>(model?.get(name));
@@ -69,7 +69,7 @@ export function createModelContext<T>(): ModelContext<T> {
       (model) => {
         setState(model.get(name));
       },
-      [name],
+      [name]
     );
 
     function updateModel(val: T[K], options?: any) {
@@ -80,11 +80,11 @@ export function createModelContext<T>(): ModelContext<T> {
     return [state, updateModel];
   };
 
-  const useTransport: ModelContext<T>['useTransport'] = () => {
+  const useTransport: ModelContext<T>["useTransport"] = () => {
     const model = useModel();
     return async (method, payload) => {
       if (!model) {
-        throw new Error('No transport connected');
+        throw new Error("No transport connected");
       }
       const requestId = await new Promise<string>((resolve, reject) => {
         const request = {
@@ -101,11 +101,11 @@ export function createModelContext<T>(): ModelContext<T> {
           },
         });
 
-        setTimeout(() => reject(new Error('Request timed out')), 10000);
+        setTimeout(() => reject(new Error("Request timed out")), 10000);
       });
       return await new Promise<void>((resolve, reject) => {
         const teardown = () => {
-          model.off('msg:custom', listener);
+          model.off("msg:custom", listener);
         };
 
         const listener = (payload) => {
@@ -120,11 +120,11 @@ export function createModelContext<T>(): ModelContext<T> {
           }
         };
 
-        model.on('msg:custom', listener);
+        model.on("msg:custom", listener);
 
         setTimeout(() => {
           teardown();
-          reject(new Error('Request timed out'));
+          reject(new Error("Request timed out"));
         }, 10000);
       });
     };

@@ -1,5 +1,5 @@
 {
-  "name": "@lmk/python-client",
+  "name": "@lmk/jupyter-widget",
   "version": "0.0.1",
   "description": "A Custom Jupyter Widget Library",
   "keywords": [
@@ -9,7 +9,7 @@
     "widgets"
   ],
   "files": [
-    "lib/**/*.js",
+    "lib/**/*.{d.ts,js}",
     "dist/*.js",
     "styles/*.css"
   ],
@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/cfeenstra67/lmk/issues"
   },
-  "license": "BSD-3-Clause",
+  "license": "MIT",
   "author": {
     "name": "Cam Feenstra",
     "email": "me@camfeenstra.com"
@@ -30,18 +30,21 @@
   },
   "scripts": {
     "build": "pnpm build:lib && pnpm build:nbextension && pnpm build:labextension:dev",
-    "build:prod": "pnpm run build:lib && pnpm build:nbextension && pnpm build:labextension",
-    "build:labextension": "jupyter labextension build .",
+    "build:prod": "pnpm run build:lib && NODE_ENV=production pnpm build:nbextension && NODE_ENV=production pnpm build:labextension",
+    "build:python": "pnpm clean && pnpm generate && venv/bin/python -m build .",
+    "build:publish": "pnpm clean && pnpm build:prod",
+    "build:labextension": "jupyter labextension build . && cd lmk/jupyter/labextension",
     "build:labextension:dev": "jupyter labextension build --development True .",
     "build:lib": "tsc -p tsconfig.build.json",
     "build:nbextension": "webpack",
-    "clean": "pnpm run clean:lib && pnpm run clean:nbextension && pnpm run clean:labextension && pnpm run clean:generated && pnpm run clean:python",
+    "clean": "pnpm clean:dist && pnpm run clean:lib && pnpm run clean:nbextension && pnpm run clean:labextension && pnpm run clean:generated && pnpm run clean:python",
+    "clean:dist": "rimraf dist",
     "clean:lib": "rimraf lib",
     "clean:labextension": "rimraf lmk/jupyter/labextension",
     "clean:nbextension": "rimraf lmk/jupyter/nbextension",
     "clean:generated": "rimraf lmk/generated",
     "clean:python": "rm -rf lmk/**/__pycache__ lmk/**/*.pyc",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" && venv/bin/black lmk",
     "generate": "openapi-generator-cli generate > /dev/null",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "lint:check": "eslint . --ext .ts,.tsx",
@@ -50,7 +53,8 @@
     "watch": "npm-run-all -p watch:*",
     "watch:lib": "tsc -w -p tsconfig.build.json",
     "watch:nbextension": "webpack --watch --mode=development",
-    "watch:labextension": "jupyter labextension watch ."
+    "watch:labextension": "jupyter labextension watch .",
+    "install-all": "pnpm install && venv/bin/pip install -e '.[dev,publish,jupyter]'"
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1.1.10 || ^2 || ^3 || ^4 || ^5 || ^6",
@@ -112,7 +116,7 @@
   },
   "jupyterlab": {
     "extension": "dist/plugin",
-    "outputDir": "lmk/jupyter/labextension/",
+    "outputDir": "lmk/jupyter/labextension/@lmk/jupyter-widget",
     "sharedPackages": {
       "@jupyter-widgets/base": {
         "bundled": false,
