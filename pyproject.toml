@@ -31,7 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = ["pydantic", "blinker", "python-dateutil"]
-version = "0.0.0"
+version = "0.0.1"
 
 [project.optional-dependencies]
 jupyter = [
