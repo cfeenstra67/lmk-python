@@ -1,5 +1,6 @@
 [build-system]
 requires = [
+    "setuptools",
     "hatchling>=1.3.1",
     "jupyterlab==3.*",
 ]
@@ -30,28 +31,28 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = ["pydantic", "blinker", "python-dateutil"]
-version = "0.1.0.dev0"
+version = "0.0.1"
 
 [project.optional-dependencies]
 jupyter = [
     "ipywidgets>=7.0.0",
     "jupyterlab"
 ]
-dev = ["black"]
+dev = ["black", "bump2version"]
 
 [project.urls]
-Homepage = "https://github.com/cfeenstra67/lmk"
+Homepage = "https://github.com/cfeenstra67/lmk-python"
 
 [tool.hatch.build]
 artifacts = [
-    "lmk/jupyter/nbextension/index.*",
+    "lmk/jupyter/nbextension/lmk.js",
     "lmk/jupyter/labextension/*.tgz",
     "lmk/jupyter/labextension",
 ]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"lmk/jupyter/nbextension" = "share/jupyter/nbextensions/lmk"
-"lmk/jupyter/labextension/lmk.js" = "share/jupyter/labextensions/lmk.js"
+"lmk/jupyter/nbextension" = "share/jupyter/nbextensions"
+"lmk/jupyter/labextension" = "share/jupyter/labextensions/lmk"
 "./install.json" = "share/jupyter/labextensions/lmk/install.json"
 "./lmk.json" = "etc/jupyter/nbconfig/notebook.d/lmk.json"
 
@@ -75,18 +76,15 @@ build_cmd = "build:prod"
 npm = "pnpm"
 
 [tool.tbump]
-field = [
-    { name = "channel", default = "" },
-    { name = "release", default = "" },
-]
 file = [
-    { src = "pyproject.toml", version_template = "version = \"{major}.{minor}.{patch}{channel}{release}\"" },
+    { src = "pyproject.toml", version_template = "version = \"{major}.{minor}.{patch}\"" },
     { src = "lmk/__init__.py" },
+    { src = "package.json", version_template = "\"version\": \"{major}.{minor}.{patch}\"" },
 ]
 
 [tool.tbump.version]
-current = "0.1.0.dev0"
-regex = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)((?P<channel>a|b|rc|.dev)(?P<release>\\d+))?"
+current = "0.0.1"
+regex = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 
 [tool.tbump.git]
 message_template = "Bump to {new_version}"

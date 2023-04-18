@@ -1,18 +1,15 @@
 
-# lmk
+# Python Client
 
-[![Build Status](https://travis-ci.org/cfeenstra67/lmk.svg?branch=master)](https://travis-ci.org/cfeenstra67/lmk)
-[![codecov](https://codecov.io/gh/cfeenstra67/lmk/branch/master/graph/badge.svg)](https://codecov.io/gh/cfeenstra67/lmk)
-
-
-A Custom Jupyter Widget Library
+<!-- [![Build Status](https://travis-ci.org/cfeenstra67/lmk.svg?branch=master)](https://travis-ci.org/cfeenstra67/lmk)
+[![codecov](https://codecov.io/gh/cfeenstra67/lmk/branch/master/graph/badge.svg)](https://codecov.io/gh/cfeenstra67/lmk) -->
 
 ## Installation
 
 You can install using `pip`:
 
 ```bash
-pip install lmk
+pip install lmk-python
 ```
 
 If you are using Jupyter Notebook 5.2 or earlier, you may also need to enable
@@ -25,26 +22,25 @@ jupyter nbextension enable --py [--sys-prefix|--user|--system] lmk
 
 Create a dev environment:
 ```bash
-conda create -n lmk-dev -c conda-forge nodejs yarn python jupyterlab
-conda activate lmk-dev
+python -m venv venv
 ```
 
-Install the python. This will also build the TS package.
+Install the python package. This will also build the TS package.
 ```bash
-pip install -e ".[test, examples]"
+pip install -e ".[dev,jupyter]"
 ```
 
 When developing your extensions, you need to manually enable your extensions with the
 notebook / lab frontend. For lab, this is done by the command:
 
-```
+```bash
 jupyter labextension develop --overwrite .
-yarn run build
+pnpm build
 ```
 
 For classic notebook, you need to run:
 
-```
+```bash
 jupyter nbextension install --sys-prefix --symlink --overwrite --py lmk
 jupyter nbextension enable --sys-prefix --py lmk
 ```
@@ -61,7 +57,7 @@ terminals to watch for changes in the extension's source and automatically rebui
 
 ```bash
 # Watch the source directory in one terminal, automatically rebuilding when needed
-yarn run watch
+pnpm watch
 # Run JupyterLab in another terminal
 jupyter lab
 ```
