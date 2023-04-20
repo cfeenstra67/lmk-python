@@ -1,7 +1,7 @@
 {
   "name": "lmk-jupyter",
   "version": "0.0.2",
-  "description": "A Custom Jupyter Widget Library",
+  "description": "Jupyter Widget for using LMK in a jupyter notebook",
   "keywords": [
     "jupyter",
     "jupyterlab",
@@ -13,9 +13,9 @@
     "dist/*.js",
     "styles/*.css"
   ],
-  "homepage": "https://github.com/cfeenstra67/lmk",
+  "homepage": "https://app.lmkapp.dev",
   "bugs": {
-    "url": "https://github.com/cfeenstra67/lmk/issues"
+    "url": "https://github.com/cfeenstra67/lmk-python/issues"
   },
   "license": "MIT",
   "author": {
@@ -26,7 +26,7 @@
   "types": "./lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cfeenstra67/lmk-python"
+    "url": "https://github.com/cfeenstra67/lmk-python/blob/main/npm.README.md"
   },
   "scripts": {
     "build": "pnpm build:lib && pnpm build:nbextension && pnpm build:labextension:dev",
@@ -54,7 +54,11 @@
     "watch:lib": "tsc -w -p tsconfig.build.json",
     "watch:nbextension": "webpack --watch --mode=development",
     "watch:labextension": "jupyter labextension watch .",
-    "install-all": "pnpm install && venv/bin/pip install -e '.[dev,publish,jupyter]'"
+    "install-all": "pnpm install && venv/bin/pip install -e '.[dev,publish,jupyter]'",
+    "prepublishOnly": "pnpm readme:npm",
+    "postpack": "pnpm readme:git",
+    "readme:npm": "mv README.md git.README.md && mv npm.README.md README.md",
+    "readme:git": "mv README.md npm.README.md && mv git.README.md README.md"
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1.1.10 || ^2 || ^3 || ^4 || ^5 || ^6",
