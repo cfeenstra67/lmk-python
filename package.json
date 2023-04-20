@@ -1,5 +1,5 @@
 {
-  "name": "@lmk/jupyter-widget",
+  "name": "lmk-jupyter",
   "version": "0.0.2",
   "description": "A Custom Jupyter Widget Library",
   "keywords": [
@@ -116,7 +116,7 @@
   },
   "jupyterlab": {
     "extension": "dist/plugin",
-    "outputDir": "lmk/jupyter/labextension/@lmk/jupyter-widget",
+    "outputDir": "lmk/jupyter/labextension/lmk-jupyter",
     "sharedPackages": {
       "@jupyter-widgets/base": {
         "bundled": false,

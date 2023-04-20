@@ -52,20 +52,20 @@ artifacts = [
 ]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"lmk/jupyter/nbextension/@lmk" = "share/jupyter/nbextensions/@lmk"
-"lmk/jupyter/labextension/@lmk" = "share/jupyter/labextensions/@lmk"
-"./install.json" = "share/jupyter/labextensions/@lmk/jupyter-widget/install.json"
+"lmk/jupyter/nbextension/lmk-jupyter" = "share/jupyter/nbextensions/lmk-jupyter"
+"lmk/jupyter/labextension/lmk-jupyter.js" = "share/jupyter/labextensions/lmk-jupyter.js"
+"./install.json" = "share/jupyter/labextensions/lmk-jupyter/install.json"
 "./lmk.json" = "etc/jupyter/nbconfig/notebook.d/lmk.json"
 
 [tool.hatch.build.hooks.jupyter-builder]
 build-function = "hatch_jupyter_builder.npm_builder"
 ensured-targets = [
-    "lmk/jupyter/nbextension/@lmk/jupyter-widget.js",
-    "lmk/jupyter/labextension/@lmk/jupyter-widget/package.json",
+    "lmk/jupyter/nbextension/lmk-jupyter.js",
+    "lmk/jupyter/labextension/lmk-jupyter/package.json",
 ]
 skip-if-exists = [
-    "lmk/jupyter/nbextension/@lmk/jupyter-widget.js",
-    "lmk/jupyter/labextension/@lmk/jupyter-widget/package.json",
+    "lmk/jupyter/nbextension/lmk-jupyter.js",
+    "lmk/jupyter/labextension/lmk-jupyter/package.json",
 ]
 dependencies = [
     "hatch-jupyter-builder>=0.5.0",

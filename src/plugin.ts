@@ -6,7 +6,7 @@ import { LMKModel } from "./lib/widget-model";
 import { LMKView } from "./widget";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
-const EXTENSION_ID = "@lmk/jupyter-widget:plugin";
+const EXTENSION_ID = "lmk-jupyter:plugin";
 
 const lmkPlugin: IPlugin<Application<Widget>, void> = {
   id: EXTENSION_ID,

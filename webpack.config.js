@@ -93,8 +93,8 @@ module.exports = [
     mode,
     entry: './src/extension.ts',
     output: {
-      filename: 'jupyter-widget.js',
-      path: path.resolve(__dirname, 'lmk', 'jupyter', 'nbextension', '@lmk'),
+      filename: 'lmk-jupyter.js',
+      path: path.resolve(__dirname, 'lmk', 'jupyter', 'nbextension'),
       library: name,
       libraryTarget: 'amd',
       publicPath: '',

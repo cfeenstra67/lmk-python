@@ -1,5 +1,5 @@
 {
   "load_extensions": {
-    "@lmk/jupyter-widget": true
+    "lmk-jupyter": true
   }
 }

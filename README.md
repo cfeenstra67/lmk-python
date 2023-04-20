@@ -1,5 +1,5 @@
 
-# Python Client
+# LMK Python Client
 
 <!-- [![Build Status](https://travis-ci.org/cfeenstra67/lmk.svg?branch=master)](https://travis-ci.org/cfeenstra67/lmk)
 [![codecov](https://codecov.io/gh/cfeenstra67/lmk/branch/master/graph/badge.svg)](https://codecov.io/gh/cfeenstra67/lmk) -->
@@ -73,8 +73,8 @@ To update the version, install tbump and use it to bump the version.
 By default it will also create a tag.
 
 ```bash
-pip install tbump
-tbump <new-version>
+pip install bump2version
+bump2version <patch|minor|major>
 ```
 
 ## Notes
@@ -83,3 +83,5 @@ Juypter extension doesn't work in vscode, would need to create a vscode extensio
 - It seems like vscode's notebook support may not be implemented correctly/doesn't look for modules in the same way as jupyter, because it is working on both jupyter notebook classic and jupyter lab, and in theory it should not be a problem to find the JS for the extension. Experiment
 
 - Makes an ascii-friendly interactive version for channels more attractive
+
+
