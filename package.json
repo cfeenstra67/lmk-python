@@ -1,6 +1,6 @@
 {
   "name": "lmk-jupyter",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Jupyter Widget for using LMK in a jupyter notebook",
   "keywords": [
     "jupyter",
