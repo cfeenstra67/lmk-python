@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2023-04-19
+
+- Update plugin version spec to use a tilde because caret isn't working for some reason
+
 ## [0.0.6] - 2023-04-19
 
 - Fix jupyter extension asset paths in `pyproject.toml`
