@@ -31,7 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
 ]
-dependencies = ["pydantic", "blinker", "python-dateutil"]
+dependencies = ["pydantic", "blinker", "python-dateutil", "typing_extensions", "urllib3"]
 version = "0.0.4"
 
 [project.optional-dependencies]

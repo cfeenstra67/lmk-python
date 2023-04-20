@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2023-04-19
+
+- Add missing `typing_extensions` and `urllib3` dependencies
+
 ## [0.0.4] - 2023-04-19
 
 - Published package to pypi
