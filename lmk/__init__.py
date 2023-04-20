@@ -5,7 +5,7 @@ from lmk.jupyter import (
     _jupyter_nbextension_paths,
 )
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 
 __all__ = [
     "__version__",

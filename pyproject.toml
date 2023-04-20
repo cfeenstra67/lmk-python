@@ -32,7 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = ["pydantic", "blinker", "python-dateutil", "typing_extensions", "urllib3"]
-version = "0.0.6"
+version = "0.0.7"
 
 [project.optional-dependencies]
 jupyter = [
