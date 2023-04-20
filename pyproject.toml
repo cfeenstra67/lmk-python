@@ -53,8 +53,8 @@ artifacts = [
 ]
 
 [tool.hatch.build.targets.wheel.shared-data]
-"lmk/jupyter/nbextension/lmk-jupyter" = "share/jupyter/nbextensions/lmk-jupyter"
-"lmk/jupyter/labextension/lmk-jupyter.js" = "share/jupyter/labextensions/lmk-jupyter.js"
+"lmk/jupyter/labextension/lmk-jupyter" = "share/jupyter/labextensions/lmk-jupyter"
+"lmk/jupyter/nbextension/lmk-jupyter.js" = "share/jupyter/nbextensions/lmk-jupyter.js"
 "./install.json" = "share/jupyter/labextensions/lmk-jupyter/install.json"
 "./lmk.json" = "etc/jupyter/nbconfig/notebook.d/lmk.json"
 
