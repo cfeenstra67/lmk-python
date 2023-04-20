@@ -15,6 +15,9 @@ prune docs/build
 prune docs/gh-pages
 prune docs/dist
 
+# Generated client
+graft lmk/generated
+
 # Javascript files
 graft lmk/labextension
 graft lmk/nbextension

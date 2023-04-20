@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.4] - 2023-04-19
+
+- Published package to pypi
+
+## [0.0.3] - 2023-04-19
+
+### Changed
+
+- Updated npm metadata, published `lmk-jupyter` to npm.
+
 ## [0.0.2] - 2023-04-17
 
-## Changed
+### Changed
 
 - Got both python and npm package builds working and changed name of js package to `lmk-jupyter`.
 
