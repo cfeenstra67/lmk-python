@@ -17,8 +17,7 @@ class ProcessMonitor(abc.ABC):
     async def attach(
         self,
         pid: int,
-        stdout: io.BytesIO,
-        stderr: io.BytesIO,
+        output_file: io.BytesIO,
     ) -> MonitoredProcess:
         """
         """

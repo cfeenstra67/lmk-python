@@ -5,19 +5,45 @@ import json
 import multiprocessing
 import os
 from datetime import datetime
-from typing import Optional
+from functools import wraps
+from typing import Optional, Callable
 
 from aiohttp import web
 
 from lmk.instance import get_instance
 from lmk.processmon.monitor import ProcessMonitor
-from lmk.utils import setup_logging
+from lmk.utils import setup_logging, socket_exists
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class ProcessMonitorDaemon(multiprocessing.Process):
+def route_handler(func: Callable) -> Callable:
+    """
+    """
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception:
+            LOGGER.exception("Error running route handler")
+            return web.json_response({"message": "Internal server error"}, status=500)
+
+    return wrapper
+
+
+@contextlib.contextmanager
+def pid_ctx(pid_file: str, pid: int):
+    with open(pid_file, "w+") as f:
+        f.write(str(pid))
+    try:
+        yield
+    finally:
+        if os.path.exists(pid_file):
+            os.remove(pid_file)
+
+
+class ProcessMonitorController:
     """
     """
     def __init__(
@@ -25,19 +51,18 @@ class ProcessMonitorDaemon(multiprocessing.Process):
         target_pid: int,
         monitor: ProcessMonitor,
         output_dir: str,
-        pid_file: str,
         notify_on: str = "none",
         channel_id: Optional[str] = None,
     ) -> None:
-        super().__init__(daemon=False)
         self.target_pid = target_pid
         self.monitor = monitor
         self.notify_on = notify_on
         self.channel_id = channel_id
         self.output_dir = output_dir
-        self.pid_file = pid_file
         self.started_at = None
-    
+        self.done_event = asyncio.Event()
+        self._exit_code = None
+
     def _should_notify(self, exit_code: int) -> bool:
         if self.notify_on == "error":
             return exit_code != 0
@@ -45,6 +70,16 @@ class ProcessMonitorDaemon(multiprocessing.Process):
             return True
         return False
 
+    @route_handler
+    async def _wait_websocket(self, request: web.Request) -> web.Response:
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        await self.done_event.wait()
+        await ws.send_json({"exit_code": self._exit_code})
+        await ws.close()
+        return ws
+
+    @route_handler
     async def _get_status(self, request: web.Request) -> web.Response:
         return web.json_response({
             "pid": self.target_pid,
@@ -59,7 +94,8 @@ class ProcessMonitorDaemon(multiprocessing.Process):
         app =  web.Application()
 
         app.add_routes([
-            web.get("/status", self._get_status)
+            web.get("/status", self._get_status),
+            web.get("/wait", self._wait_websocket),
         ])
 
         runner = web.AppRunner(app)
@@ -73,26 +109,20 @@ class ProcessMonitorDaemon(multiprocessing.Process):
                 await asyncio.sleep(3600)
             except asyncio.CancelledError:
                 await runner.cleanup()
-                await site.stop()
-                if os.path.exists(socket_path):
+                if socket_exists(socket_path):
                     os.remove(socket_path)
-
                 raise
 
-    async def _run_async(self) -> None:
-        stdout_path = os.path.join(self.output_dir, "stdout.log")
-        stderr_path = os.path.join(self.output_dir, "stderr.log")
+    async def _run_command(self) -> None:
+        output_path = os.path.join(self.output_dir, "output.log")
 
         exit_code = -1
         error = None
         try:
-            with contextlib.ExitStack() as stack:
-                stdout = stack.enter_context(open(stdout_path, "ab+"))
-                stderr = stack.enter_context(open(stderr_path, "ab+"))
+            with open(output_path, "ab+", buffering=0) as output:
                 process =  await self.monitor.attach(
                     self.target_pid,
-                    stdout,
-                    stderr
+                    output
                 )
                 self.target_pid = process.pid
                 exit_code = await process.wait()
@@ -103,6 +133,10 @@ class ProcessMonitorDaemon(multiprocessing.Process):
         else:
             LOGGER.info("%d: exited with code %d", self.target_pid, exit_code)
             should_notify = self._should_notify(exit_code)
+        
+        ended_at = datetime.utcnow()
+        self._exit_code = exit_code
+        self.done_event.set()
 
         notify_status = "none"
         if not should_notify:
@@ -129,42 +163,51 @@ class ProcessMonitorDaemon(multiprocessing.Process):
                 "error": error,
                 "notify_status": notify_status,
                 "notify_on": self.notify_on,
-                "channel_id": self.channel_id
+                "channel_id": self.channel_id,
+                "started_at": self.started_at.isoformat(),
+                "ended_at": ended_at.isoformat(),
             }, f)
-    
-    def _run(self) -> None:
-        loop = asyncio.new_event_loop()
+
+    async def run(self) -> None:
+        self.started_at = datetime.utcnow()
+
         tasks = []
-        tasks.append(loop.create_task(self.run_server()))
+        tasks.append(asyncio.create_task(self.run_server()))
 
         LOGGER.info("Running main process")
         try:
-            loop.run_until_complete(self._run_async())
+            await self._run_command()
         finally:
             for task in reversed(tasks):
                 with contextlib.suppress(asyncio.CancelledError):
                     task.cancel()
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
-    
-    @contextlib.contextmanager
-    def pid_ctx(self):
-        with open(self.pid_file, "w+") as f:
-            f.write(str(self.pid))
-        try:
-            yield
-        finally:
-            if os.path.exists(self.pid_file):
-                os.remove(self.pid_file)
+
+
+class ProcessMonitorDaemon(multiprocessing.Process):
+    """
+    """
+    def __init__(
+        self,
+        controller: ProcessMonitorController,
+        pid_file: str,
+    ) -> None:
+        super().__init__(daemon=False)
+        self.controller = controller
+        self.pid_file = pid_file
 
     def run(self) -> None:
         # Double fork so the process continues to run
         if os.fork() != 0:
             return
-        self.started_at = datetime.utcnow()
         
         log_path = os.path.join(self.output_dir, "lmk.log")
         setup_logging(log_file=log_path)
 
-        with self.pid_ctx():
-            self._run()
+        with pid_ctx(self.pid_file, self.pid):
+            loop = asyncio.new_event_loop()
+
+            try:
+                loop.run_until_complete(self.controller.run())
+            finally:
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                loop.close()
