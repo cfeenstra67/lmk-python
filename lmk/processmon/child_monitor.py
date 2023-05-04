@@ -30,6 +30,9 @@ class MonitoredChildProcess(MonitoredProcess):
     @property
     def pid(self) -> int:
         return self.process.pid
+    
+    async def send_signal(self, signum: int) -> None:
+        self.process.send_signal(signum)
 
     async def wait(self) -> int:
         output_ready = asyncio.create_task(wait_for_fd(self.output_fd))
@@ -64,6 +67,7 @@ class ChildMonitor(ProcessMonitor):
             stdin=asyncio.subprocess.DEVNULL,
             stdout=write_output,
             stderr=write_output,
-            bufsize=0
+            bufsize=0,
+            start_new_session=True
         )
         return MonitoredChildProcess(proc, read_output, output_file)

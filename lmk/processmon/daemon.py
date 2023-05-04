@@ -4,6 +4,7 @@ import logging
 import json
 import multiprocessing
 import os
+import signal
 from datetime import datetime
 from functools import wraps
 from typing import Optional, Callable
@@ -11,7 +12,7 @@ from typing import Optional, Callable
 from aiohttp import web
 
 from lmk.instance import get_instance
-from lmk.processmon.monitor import ProcessMonitor
+from lmk.processmon.monitor import ProcessMonitor, MonitoredProcess
 from lmk.utils import setup_logging, socket_exists
 
 
@@ -59,9 +60,11 @@ class ProcessMonitorController:
         self.notify_on = notify_on
         self.channel_id = channel_id
         self.output_dir = output_dir
-        self.started_at = None
+
         self.done_event = asyncio.Event()
-        self._exit_code = None
+        self.started_at: Optional[datetime] = None
+        self.exit_code: Optional[int] = None
+        self.process: Optional[MonitoredProcess] = None
 
     def _should_notify(self, exit_code: int) -> bool:
         if self.notify_on == "error":
@@ -75,7 +78,7 @@ class ProcessMonitorController:
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         await self.done_event.wait()
-        await ws.send_json({"exit_code": self._exit_code})
+        await ws.send_json({"exit_code": self.exit_code})
         await ws.close()
         return ws
 
@@ -87,8 +90,26 @@ class ProcessMonitorController:
             "channel_id": self.channel_id,
             "started_at": self.started_at.isoformat()
         })
+
+    @route_handler
+    async def _send_signal(self, request: web.Request) -> web.Response:
+        body = await request.json()
+        signum = body["signal"]
+        if isinstance(signum, str):
+            signum = getattr(signal.Signals, signum).value
+       
+        await self.send_signal(signum)
+
+        return web.json_response({"ok": True})
     
-    async def run_server(self) -> None:
+    @route_handler
+    async def _set_notify_on(self, request: web.Request) -> web.Response:
+        body = await request.json()
+        self.notify_on = body["notify_on"]
+
+        return web.json_response({"ok": True})
+
+    async def _run_server(self) -> None:
         socket_path = os.path.join(self.output_dir, "daemon.sock")
 
         app =  web.Application()
@@ -96,6 +117,8 @@ class ProcessMonitorController:
         app.add_routes([
             web.get("/status", self._get_status),
             web.get("/wait", self._wait_websocket),
+            web.post("/signal", self._send_signal),
+            web.post("/set-notify-on", self._set_notify_on),
         ])
 
         runner = web.AppRunner(app)
@@ -120,12 +143,12 @@ class ProcessMonitorController:
         error = None
         try:
             with open(output_path, "ab+", buffering=0) as output:
-                process =  await self.monitor.attach(
+                self.process =  await self.monitor.attach(
                     self.target_pid,
                     output
                 )
-                self.target_pid = process.pid
-                exit_code = await process.wait()
+                self.target_pid = self.process.pid
+                exit_code = await self.process.wait()
         except Exception as err:
             error = f"{type(err).__name__}: {err}"
             LOGGER.exception("%d: %s monitor raised exception", self.target_pid, type(self.monitor).__name__)
@@ -135,7 +158,8 @@ class ProcessMonitorController:
             should_notify = self._should_notify(exit_code)
         
         ended_at = datetime.utcnow()
-        self._exit_code = exit_code
+        self.exit_code = exit_code
+        self.process = None
         self.done_event.set()
 
         notify_status = "none"
@@ -168,11 +192,16 @@ class ProcessMonitorController:
                 "ended_at": ended_at.isoformat(),
             }, f)
 
+    async def send_signal(self, signum: int) -> None:
+        if self.process is None:
+            raise ProcessNotAttached
+        await self.process.send_signal(signum)
+
     async def run(self) -> None:
         self.started_at = datetime.utcnow()
 
         tasks = []
-        tasks.append(asyncio.create_task(self.run_server()))
+        tasks.append(asyncio.create_task(self._run_server()))
 
         LOGGER.info("Running main process")
         try:
@@ -199,8 +228,12 @@ class ProcessMonitorDaemon(multiprocessing.Process):
         # Double fork so the process continues to run
         if os.fork() != 0:
             return
-        
-        log_path = os.path.join(self.output_dir, "lmk.log")
+
+        # Detach this process from the parent so we don't share
+        # signals
+        os.setsid()
+
+        log_path = os.path.join(self.controller.output_dir, "lmk.log")
         setup_logging(log_file=log_path)
 
         with pid_ctx(self.pid_file, self.pid):
@@ -211,3 +244,8 @@ class ProcessMonitorDaemon(multiprocessing.Process):
             finally:
                 loop.run_until_complete(loop.shutdown_asyncgens())
                 loop.close()
+
+
+class ProcessNotAttached(Exception):
+    """
+    """

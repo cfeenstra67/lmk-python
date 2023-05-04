@@ -9,6 +9,10 @@ class MonitoredProcess(abc.ABC):
     async def wait(self) -> int:
         raise NotImplementedError
 
+    @abc.abstractclassmethod
+    async def send_signal(self, signum: int) -> None:
+        raise NotImplementedError
+
 
 class ProcessMonitor(abc.ABC):
     """
