@@ -5,7 +5,7 @@ import signal
 import time
 from typing import Optional, Awaitable, Any, AsyncContextManager, List, Callable
 
-from lmk.utils.os import signal_handler_ctx, socket_exists
+from lmk.utils.os import socket_exists
 
 
 LOGGER = logging.getLogger(__name__)
@@ -98,20 +98,25 @@ async def async_signal_handler_ctx(
     handler: Callable[[int], Awaitable[None]],
 ) -> AsyncContextManager[None]:
     loop = asyncio.get_running_loop()
+
     tasks = []
 
-    def handle_signal(signum):
+    def handle_signal(signum, _):
         tasks.append(asyncio_create_task(
             handler(signum),
             loop
         ))
     
-    with signal_handler_ctx(signals, handle_signal):
-        try:
-            yield
-        finally:
-            if tasks:
-                await asyncio.wait(tasks)
+    for sig in signals:
+        loop.add_signal_handler(sig, handle_signal)
+    
+    try:
+        yield
+    finally:
+        for sig in signals:
+            loop.remove_signal_handler(sig)
+        if tasks:
+            await asyncio.wait(tasks)
 
 
 async def wait_for_socket(
