@@ -18,17 +18,13 @@ def signal_handler_ctx(
     signals: List[int],
     handler: Callable[[int], None],
 ) -> ContextManager[None]:
-
     def handle_signal(signum, _):
         handler(signum)
 
     prev_handlers = {}
     for signal_num in signals:
-        prev_handlers[signal_num] = signal.signal(
-            signal_num,
-            handle_signal
-        )
-    
+        prev_handlers[signal_num] = signal.signal(signal_num, handle_signal)
+
     try:
         yield
     finally:

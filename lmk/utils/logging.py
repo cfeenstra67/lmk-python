@@ -11,14 +11,9 @@ def setup_logging(
     format: str = LOG_FORMAT,
     log_file: Optional[str] = None,
 ) -> None:
-    handler_kwargs = {
-        "class": "logging.StreamHandler"
-    }
+    handler_kwargs = {"class": "logging.StreamHandler"}
     if log_file is not None:
-        handler_kwargs = {
-            "class": "logging.FileHandler",
-            "filename": log_file
-        }
+        handler_kwargs = {"class": "logging.FileHandler", "filename": log_file}
 
     config = {
         "version": 1,
@@ -29,24 +24,12 @@ def setup_logging(
             }
         },
         "handlers": {
-            "default": {
-                "level": level,
-                "formatter": "standard",
-                **handler_kwargs
-            }
+            "default": {"level": level, "formatter": "standard", **handler_kwargs}
         },
         "loggers": {
-            "": {
-                "handlers": ["default"],
-                "level": "ERROR",
-                "propagate": False
-            },
-            "lmk": {
-                "handlers": ["default"],
-                "level": "INFO",
-                "propagate": False
-            }
-        }
+            "": {"handlers": ["default"], "level": "ERROR", "propagate": False},
+            "lmk": {"handlers": ["default"], "level": "INFO", "propagate": False},
+        },
     }
 
     dictConfig(config)

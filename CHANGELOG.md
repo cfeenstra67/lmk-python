@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Creating initial version of CLI to monitor running scripts.
+
 ## [0.0.7] - 2023-04-19
 
 - Update plugin version spec to use a tilde because caret isn't working for some reason

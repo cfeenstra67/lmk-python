@@ -13,18 +13,16 @@ from lmk.utils import socket_exists
 
 @dc.dataclass(frozen=True)
 class NewJob:
-    """
-    """
+    """ """
+
     job_id: str
     job_dir: str
     pid_file: str
 
 
 @dc.dataclass(frozen=True)
-class RunningJob:
-    """
-    """
-    job_id: str
+class RunningJob(NewJob):
+    """ """
     running: bool
     target_pid: int
     notify_on: str
@@ -32,8 +30,8 @@ class RunningJob:
 
 
 class JobManager:
-    """
-    """
+    """ """
+
     def __init__(self, base_path: Optional[str] = None) -> None:
         self.base_path = base_path
         self.pids_dir = os.path.join(base_path, "job-pids")
@@ -56,20 +54,19 @@ class JobManager:
 
             os.makedirs(job_dir)
             break
-        
+
         if not os.path.exists(self.pids_dir):
             os.makedirs(self.pids_dir)
 
         pid_file = os.path.join(self.pids_dir, f"{job_id}.pid")
         return NewJob(job_id, job_dir, pid_file)
 
-    async def attach(self) -> None:
-        pass
-
     async def get_job(self, job_id: str) -> Optional[RunningJob]:
         job_dir = os.path.join(self.jobs_dir, job_id)
         if not os.path.exists(job_dir):
             return None
+
+        pid_file = os.path.join(self.pids_dir, f"{job_id}.pid")
 
         socket_path = os.path.join(job_dir, "daemon.sock")
         if not socket_exists(socket_path):
@@ -81,10 +78,12 @@ class JobManager:
                 result = json.load(f)
                 return RunningJob(
                     job_id=job_id,
+                    job_dir=job_dir,
+                    pid_file=pid_file,
                     running=False,
                     target_pid=result["pid"],
                     notify_on=result["notify_on"],
-                    started_at=datetime.fromisoformat(result["started_at"])
+                    started_at=datetime.fromisoformat(result["started_at"]),
                 )
 
         connector = aiohttp.UnixConnector(path=socket_path)
@@ -93,10 +92,12 @@ class JobManager:
                 body = await response.json()
                 return RunningJob(
                     job_id=job_id,
+                    job_dir=job_dir,
+                    pid_file=pid_file,
                     running=True,
                     target_pid=body["pid"],
                     notify_on=body["notify_on"],
-                    started_at=datetime.fromisoformat(body["started_at"])
+                    started_at=datetime.fromisoformat(body["started_at"]),
                 )
 
     async def list_running_jobs(self) -> AsyncGenerator[RunningJob, None]:
@@ -126,11 +127,13 @@ class JobManager:
             tasks.append(asyncio.create_task(self.get_job(job_id)))
 
         while tasks:
-            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(
+                tasks, return_when=asyncio.FIRST_COMPLETED
+            )
             for task in done:
                 res = task.result()
                 if res is None:
                     continue
                 yield res
-            
+
             tasks = pending

@@ -1,5 +1,4 @@
 import abc
-import io
 
 
 class MonitoredProcess(abc.ABC):
@@ -15,14 +14,14 @@ class MonitoredProcess(abc.ABC):
 
 
 class ProcessMonitor(abc.ABC):
-    """
-    """
+    """ """
+
     @abc.abstractmethod
     async def attach(
         self,
         pid: int,
-        output_file: io.BytesIO,
+        output_path: str,
+        log_path: str,
     ) -> MonitoredProcess:
-        """
-        """
+        """ """
         raise NotImplementedError

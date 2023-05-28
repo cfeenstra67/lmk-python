@@ -53,6 +53,9 @@ publish = ["build", "twine"]
 [project.urls]
 Homepage = "https://github.com/cfeenstra67/lmk-python"
 
+[project.scripts]
+lmk = "lmk.__main__:cli"
+
 [tool.hatch.build]
 artifacts = [
     "lmk/generated",
