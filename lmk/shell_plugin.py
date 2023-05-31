@@ -11,7 +11,6 @@ PROJECT_DIR = os.path.dirname(__file__)
 SCRIPT_PATH = os.path.join(PROJECT_DIR, "shell_cli.sh")
 
 
-
 def get_shell_cli_script(shell: Optional[str] = None) -> str:
     with open(SCRIPT_PATH) as f:
         return f.read()
@@ -29,10 +28,7 @@ def shell_profile_file(shell: Optional[str] = None) -> str:
     if shell is None:
         raise RuntimeError(f"Cannot detect current shell")
 
-    candidates = [
-        f"~/.{shell}rc",
-        f"~/.{shell}_profile"
-    ]
+    candidates = [f"~/.{shell}rc", f"~/.{shell}_profile"]
     for candidate in candidates:
         fullpath = os.path.expanduser(candidate)
         if os.path.exists(fullpath):
@@ -64,22 +60,26 @@ def install_script(profile_path: str) -> None:
             end_index = profile.index(SCRIPT_END, start_index + len(SCRIPT_START))
         except ValueError:
             pass
-    
+
     if start_index != -1 and end_index != -1:
-        new_profile = "".join([
-            profile[:start_index],
-            SCRIPT_START,
-            f". {SCRIPT_PATH}",
-            SCRIPT_END,
-            profile[end_index + len(SCRIPT_END):]
-        ])
+        new_profile = "".join(
+            [
+                profile[:start_index],
+                SCRIPT_START,
+                f". {SCRIPT_PATH}",
+                SCRIPT_END,
+                profile[end_index + len(SCRIPT_END) :],
+            ]
+        )
     else:
-        new_profile = "".join([
-            profile,
-            SCRIPT_START,
-            f". {SCRIPT_PATH}",
-            SCRIPT_END,
-        ])
+        new_profile = "".join(
+            [
+                profile,
+                SCRIPT_START,
+                f". {SCRIPT_PATH}",
+                SCRIPT_END,
+            ]
+        )
 
     with open(profile_path, "w+") as f:
         f.write(new_profile)
@@ -103,14 +103,13 @@ def uninstall_script(profile_path: str) -> None:
             end_index = profile.index(SCRIPT_END, start_index + len(SCRIPT_START))
         except ValueError:
             pass
-    
+
     new_profile = profile
     if start_index != -1 and end_index != -1:
-        new_profile = "".join([
-            profile[:start_index],
-            profile[end_index + len(SCRIPT_END):]
-        ])
-    
+        new_profile = "".join(
+            [profile[:start_index], profile[end_index + len(SCRIPT_END) :]]
+        )
+
     if new_profile != profile:
         with open(profile_path, "w+") as f:
             f.write(new_profile)
@@ -138,7 +137,7 @@ def parse_jobs_output(output: str) -> List[ShellJob]:
         state = match.group(3)
         command = match.group(4)
         out.append(ShellJob(command, pid, job_id, state))
-    
+
     return out
 
 
@@ -159,15 +158,15 @@ def resolve_pid(pid: str) -> Tuple[int, int]:
             "install the shell plugin using `lmk shell-plugin >> ~/.zshrc`"
         )
         raise click.Abort
-    
+
     jobs = parse_jobs_output(shell_jobs)
     match = None
     for job in jobs:
         if job.job_id == job_id:
             match = job
             break
-    
+
     if match is None:
         raise RuntimeError(f"No job found with ID {job_id}")
-    
+
     return match.pid, match.job_id

@@ -53,7 +53,9 @@ class ChildMonitor(ProcessMonitor):
             raise ValueError("argv must have length >=1")
         self.argv = argv
 
-    async def attach(self, pid: int, output_path: str, log_path: str) -> MonitoredChildProcess:
+    async def attach(
+        self, pid: int, output_path: str, log_path: str
+    ) -> MonitoredChildProcess:
         read_output, write_output = pty.openpty()
 
         proc = await asyncio.create_subprocess_exec(

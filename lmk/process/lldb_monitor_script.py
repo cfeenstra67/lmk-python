@@ -16,9 +16,7 @@ LOGGER = logging.getLogger("lldb_monitor_script")
 
 
 def setup_logging(level: str) -> None:
-    LOGGER.setLevel(
-        getattr(logging, level.strip().upper(), logging.INFO)
-    )
+    LOGGER.setLevel(getattr(logging, level.strip().upper(), logging.INFO))
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(
         logging.Formatter("%(asctime)s [%(name)s - %(levelname)s] %(message)s")
@@ -27,8 +25,8 @@ def setup_logging(level: str) -> None:
 
 
 class ProcessState(enum.Enum):
-    """
-    """
+    """ """
+
     Attaching = lldb.eStateAttaching
     Connected = lldb.eStateConnected
     Crashed = lldb.eStateCrashed
@@ -44,8 +42,8 @@ class ProcessState(enum.Enum):
 
 
 class ThreadStopReason(enum.Enum):
-    """
-    """
+    """ """
+
     Exec = lldb.eStopReasonExec
     Breakpoint = lldb.eStopReasonBreakpoint
     Exception = lldb.eStopReasonException
@@ -61,21 +59,23 @@ class ThreadStopReason(enum.Enum):
 def run_commands(command_interpreter, commands):
     return_obj = lldb.SBCommandReturnObject()
     for command in commands:
-        command_interpreter.HandleCommand( command, return_obj )
+        command_interpreter.HandleCommand(command, return_obj)
         if return_obj.Succeeded():
-            LOGGER.debug("Command `%s` was successful:\n%s", command, return_obj.GetOutput())
+            LOGGER.debug(
+                "Command `%s` was successful:\n%s", command, return_obj.GetOutput()
+            )
         else:
             LOGGER.error("Command `%s` failed:\n%s", command, return_obj.GetError())
 
 
-async def wait_for_event(listener: lldb.SBListener, timeout: float) -> Optional[lldb.SBEvent]:
-    """
-    """
+async def wait_for_event(
+    listener: lldb.SBListener, timeout: float
+) -> Optional[lldb.SBEvent]:
+    """ """
     event = lldb.SBEvent()
     loop = asyncio.get_running_loop()
     result = await loop.run_in_executor(
-        None,
-        lambda: listener.WaitForEvent(timeout, event)
+        None, lambda: listener.WaitForEvent(timeout, event)
     )
     return event if result else None
 
@@ -99,7 +99,12 @@ def process_message(process: lldb.SBProcess, message: Any) -> None:
 async def run(process: lldb.SBProcess, listener: lldb.SBListener) -> int:
     pid = process.GetProcessID()
 
-    LOGGER.debug("Running w/ pid: %s, process: %s, state: %s", pid, process, ProcessState(process.GetState()))
+    LOGGER.debug(
+        "Running w/ pid: %s, process: %s, state: %s",
+        pid,
+        process,
+        ProcessState(process.GetState()),
+    )
 
     stdin_fd = sys.stdin.fileno()
 
@@ -108,7 +113,9 @@ async def run(process: lldb.SBProcess, listener: lldb.SBListener) -> int:
     event_task = asyncio.create_task(wait_for_event(listener, timeout))
 
     while True:
-        await asyncio.wait([stdin_task, event_task], return_when=asyncio.FIRST_COMPLETED)
+        await asyncio.wait(
+            [stdin_task, event_task], return_when=asyncio.FIRST_COMPLETED
+        )
         if stdin_task.done():
             line = os.read(stdin_fd, 1000)
             try:
@@ -125,7 +132,7 @@ async def run(process: lldb.SBProcess, listener: lldb.SBListener) -> int:
 
             if not event:
                 continue
-            
+
             stream = lldb.SBStream()
             event.GetDescription(stream)
 
@@ -146,11 +153,18 @@ async def run(process: lldb.SBProcess, listener: lldb.SBListener) -> int:
             if state == ProcessState.Exited:
                 exit_desc = process.GetExitDescription()
                 if exit_desc:
-                    LOGGER.info("process %d exited with status %s: %s", pid, process.GetExitStatus(), exit_desc)
+                    LOGGER.info(
+                        "process %d exited with status %s: %s",
+                        pid,
+                        process.GetExitStatus(),
+                        exit_desc,
+                    )
                 else:
-                    LOGGER.info("process %d exited with status %s", pid, process.GetExitStatus())
+                    LOGGER.info(
+                        "process %d exited with status %s", pid, process.GetExitStatus()
+                    )
                 return process.GetExitStatus()
-            
+
             if state == ProcessState.Crashed:
                 LOGGER.info("process %d crashed", pid)
                 exit_status = -1
@@ -159,7 +173,7 @@ async def run(process: lldb.SBProcess, listener: lldb.SBListener) -> int:
                 except Exception:
                     LOGGER.exception("Error getting exit status")
                 return exit_status
-            
+
             if state == ProcessState.Detached:
                 LOGGER.error("process %d detached unexpectedly", pid)
                 return -1
@@ -192,12 +206,14 @@ async def main(argv: List[str]) -> None:
     parser.add_argument("pid", type=int, help="Pid to monitor")
     parser.add_argument("output_file", help="File to redirect output to")
     parser.add_argument("-l", "--log-level", default="ERROR", help="Set log level")
-    parser.add_argument("-m", "--message", default=None, help="Display message when taking over process")
+    parser.add_argument(
+        "-m", "--message", default=None, help="Display message when taking over process"
+    )
 
     args = parser.parse_args(argv)
 
     setup_logging(args.log_level)
-    
+
     LOGGER.info("Stopping %d", args.pid)
     os.kill(args.pid, signal.SIGSTOP)
 
@@ -206,9 +222,7 @@ async def main(argv: List[str]) -> None:
 
     command_interpreter = debugger.GetCommandInterpreter()
 
-    signals = {
-        sig.name for sig in signal.Signals
-    } - {"SIGKILL"}
+    signals = {sig.name for sig in signal.Signals} - {"SIGKILL"}
     stop_signals = {"SIGTSTP", "SIGSTOP"}
     signals -= stop_signals
 
@@ -216,8 +230,8 @@ async def main(argv: List[str]) -> None:
         command_interpreter,
         [
             f"process handle -p true -s false -n true {' '.join(signals)}",
-            f"process handle -p true -s true -n true {' '.join(stop_signals)}"
-        ]
+            f"process handle -p true -s true -n true {' '.join(stop_signals)}",
+        ],
     )
 
     target = debugger.CreateTarget("")
@@ -229,7 +243,7 @@ async def main(argv: List[str]) -> None:
     error = lldb.SBError()
     listener = lldb.SBListener("event_listener")
 
-    process = target.AttachToProcessWithID(listener, args.pid,  error)
+    process = target.AttachToProcessWithID(listener, args.pid, error)
     if not process:
         LOGGER.error("Process attach failed")
         return 1
@@ -250,23 +264,24 @@ async def main(argv: List[str]) -> None:
     if args.message is not None:
         commands.append(f"expr int $xd = (int) dup(1)")
 
-    commands.extend([
-        f"expr (void) dup2($fd, 1)",
-        f"expr (void) dup2($fd, 2)",
-    ])
+    commands.extend(
+        [
+            f"expr (void) dup2($fd, 1)",
+            f"expr (void) dup2($fd, 2)",
+        ]
+    )
 
     if args.message is not None:
-        commands.extend([
-            f"expr (void) write($xd, {json.dumps(args.message)}, {len(args.message)})",
-            f"expr (void) close($xd)",
-        ])
-    
+        commands.extend(
+            [
+                f"expr (void) write($xd, {json.dumps(args.message)}, {len(args.message)})",
+                f"expr (void) close($xd)",
+            ]
+        )
+
     commands.append(f"expr (void) close($fd)")
 
-    run_commands(
-        command_interpreter,
-        commands
-    )
+    run_commands(command_interpreter, commands)
     process.Continue()
 
     sys.stdout.write(json.dumps({"type": "attached"}) + "\n")

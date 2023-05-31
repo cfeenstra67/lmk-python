@@ -158,8 +158,9 @@ async def check_output(args: List[str]) -> str:
 
 
 class CalledProcessError(Exception):
-
-    def __init__(self, args: List[str], stdout: str, stderr: str, exit_code: int) -> None:
+    def __init__(
+        self, args: List[str], stdout: str, stderr: str, exit_code: int
+    ) -> None:
         self.stdout = stdout
         self.stderr = stderr
         self.exit_code = exit_code

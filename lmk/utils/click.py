@@ -5,11 +5,7 @@ from typing import Optional, Callable
 import click
 
 
-def async_group(
-    func: Optional[Callable] = None,
-    **kws
-) -> click.Group:
-
+def async_group(func: Optional[Callable] = None, **kws) -> click.Group:
     def dec(f):
         @click.group(**kws)
         @wraps(f)

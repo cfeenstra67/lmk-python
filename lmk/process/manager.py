@@ -23,6 +23,7 @@ class NewJob:
 @dc.dataclass(frozen=True)
 class RunningJob(NewJob):
     """ """
+
     running: bool
     target_pid: int
     notify_on: str
@@ -65,7 +66,7 @@ class JobManager:
         job_dir = os.path.join(self.jobs_dir, job_id)
         if not os.path.exists(job_dir):
             raise ValueError(f"Job does not exist: {job_id}")
-        
+
         pid_file = os.path.join(self.pids_dir, f"{job_id}.pid")
         return NewJob(job_id, job_dir, pid_file)
 

@@ -13,7 +13,14 @@ from lmk.process.daemon import ProcessMonitorController
 from lmk.process.lldb_monitor import LLDBProcessMonitor
 from lmk.process.manager import JobManager
 from lmk.process.run import run_foreground, run_daemon
-from lmk.shell_plugin import detect_shell, install_script, uninstall_script, shell_profile_file, resolve_pid, get_shell_cli_script
+from lmk.shell_plugin import (
+    detect_shell,
+    install_script,
+    uninstall_script,
+    shell_profile_file,
+    resolve_pid,
+    get_shell_cli_script,
+)
 from lmk.utils.click import async_command
 from lmk.utils.decorators import stack_decorators
 from lmk.utils.logging import setup_logging
@@ -42,12 +49,17 @@ def login(force):
     instance.authenticate(force=force)
 
 
-attach_option = click.option("--attach/--no-attach", default=True, help="Attach to the process")
+attach_option = click.option(
+    "--attach/--no-attach", default=True, help="Attach to the process"
+)
 
 name_option = click.option("-N", "--name", default=None)
 
+
 def notify_on_option(default: str = "none"):
-    return click.option("-n", "--notify", default=default, type=click.Choice(["stop", "error", "none"]))
+    return click.option(
+        "-n", "--notify", default=default, type=click.Choice(["stop", "error", "none"])
+    )
 
 
 @async_command(cli)
@@ -57,7 +69,14 @@ def notify_on_option(default: str = "none"):
 @notify_on_option()
 @click.argument("command", nargs=-1)
 @click.pass_context
-async def run(ctx: click.Context, daemon: bool, command: List[str], attach: bool, name: Optional[str], notify: str):
+async def run(
+    ctx: click.Context,
+    daemon: bool,
+    command: List[str],
+    attach: bool,
+    name: Optional[str],
+    notify: str,
+):
     if name is None and command:
         name = command[0]
 
@@ -66,12 +85,7 @@ async def run(ctx: click.Context, daemon: bool, command: List[str], attach: bool
     click.secho(f"Job ID: {job.job_id}", fg="green", bold=True)
 
     monitor = ChildMonitor(command)
-    controller = ProcessMonitorController(
-        -1,
-        monitor,
-        job.job_dir,
-        notify
-    )
+    controller = ProcessMonitorController(-1, monitor, job.job_dir, notify)
 
     if daemon:
         run_daemon(job, controller)
@@ -87,14 +101,21 @@ monitor_args = stack_decorators(
     attach_option,
     name_option,
     notify_on_option(),
-    click.option("-j", "--job", default=None)
+    click.option("-j", "--job", default=None),
 )
 
 
 @async_command(cli)
 @monitor_args
 @click.pass_context
-async def monitor(ctx: click.Context, pid: str, attach: bool, name: Optional[str], notify: str, job: str):
+async def monitor(
+    ctx: click.Context,
+    pid: str,
+    attach: bool,
+    name: Optional[str],
+    notify: str,
+    job: str,
+):
     manager: JobManager = ctx.obj["manager"]
     if job is None:
         job_obj = manager.create_job(name)
@@ -106,12 +127,7 @@ async def monitor(ctx: click.Context, pid: str, attach: bool, name: Optional[str
     monitor = LLDBProcessMonitor(ctx.obj["log_level"])
     pid, _ = resolve_pid(pid)
 
-    controller = ProcessMonitorController(
-        pid,
-        monitor,
-        job_obj.job_dir,
-        notify
-    )
+    controller = ProcessMonitorController(pid, monitor, job_obj.job_dir, notify)
 
     run_daemon(job_obj, controller)
 
@@ -132,7 +148,7 @@ async def attach(ctx: click.Context, job_id: str):
 
 def pad(value: str, length: int, character: str = " ") -> str:
     if len(value) > length:
-        return value[:length - 3] + "..."
+        return value[: length - 3] + "..."
     return value + character * (length - len(value))
 
 
@@ -178,11 +194,7 @@ async def kill(ctx: click.Context, job_id: str, signal: str):
         signal_value = getattr(
             signal_module,
             signal.upper(),
-            getattr(
-                signal_module,
-                "SIG" + signal.upper(),
-                None
-            )
+            getattr(signal_module, "SIG" + signal.upper(), None),
         )
 
     if signal_value is None:
@@ -211,12 +223,30 @@ async def notify(ctx: click.Context, job_id: str, notify: str) -> None:
         "using shell syntax like %1, %2, etc."
     )
 )
-@click.option("-i", "--install", default=False, is_flag=True, help="Install the shell CLI script in the shell profile")
-@click.option("-u", "--uninstall", default=False, is_flag=True, help="Uninstall the shell CLI script from the shell profile")
+@click.option(
+    "-i",
+    "--install",
+    default=False,
+    is_flag=True,
+    help="Install the shell CLI script in the shell profile",
+)
+@click.option(
+    "-u",
+    "--uninstall",
+    default=False,
+    is_flag=True,
+    help="Uninstall the shell CLI script from the shell profile",
+)
 @click.option("-p", "--print", is_flag=True, default=False)
 @click.option("-s", "--shell", default=None)
 @click.pass_context
-def shell_plugin(ctx: click.Context, install: bool, uninstall: bool, shell: Optional[str], print: bool) -> None:
+def shell_plugin(
+    ctx: click.Context,
+    install: bool,
+    uninstall: bool,
+    shell: Optional[str],
+    print: bool,
+) -> None:
     if shell is None:
         shell = detect_shell()
 
@@ -226,15 +256,19 @@ def shell_plugin(ctx: click.Context, install: bool, uninstall: bool, shell: Opti
         ctx.fail("Only one of --print, --install, or --uninstall may be provided")
     if num_actions == 0:
         ctx.fail("One of --print, --install, or --uninstall must be provided")
-    
+
     if print:
         script = get_shell_cli_script(shell)
         click.echo(script)
-        click.echo(textwrap.dedent("""
+        click.echo(
+            textwrap.dedent(
+                """
         # THIS SHOULD BE SOURCED BY YOUR SHELL
         # E.g. . <(lmk shell-plugin --print)
         # To add to your shell profile, use the --install flag
-        """).strip())
+        """
+            ).strip()
+        )
         return
 
     profile_file = shell_profile_file(shell)
@@ -246,7 +280,7 @@ def shell_plugin(ctx: click.Context, install: bool, uninstall: bool, shell: Opti
             f"`. {profile_file}` or open a new shell to see the "
             f"changes take effect.",
             fg="green",
-            bold=True
+            bold=True,
         )
         return
 

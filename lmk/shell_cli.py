@@ -28,7 +28,7 @@ def format_params(values: Dict[str, Any], params: List[click.Parameter]) -> List
         else:
             out.append(param.opts[-1])
             out.append(value)
-    
+
     return out
 
 
@@ -53,7 +53,7 @@ def process_cmd(
                 **sub_ctx.params,
                 "job": job_id,
                 "pid": str(pid),
-                "attach": False
+                "attach": False,
             }
             new_args = root_args.copy()
             new_args.append(cmd_name)
@@ -67,19 +67,13 @@ def process_cmd(
                 new_args.append("attach")
                 attach_command = cli.get_command(ctx, "attach")
                 attach_params = attach_command.get_params(ctx)
-                new_attach_params = {
-                    "job_id": job_id
-                }
-                new_args.extend(
-                    format_params(new_attach_params, attach_params)
-                )
+                new_attach_params = {"job_id": job_id}
+                new_args.extend(format_params(new_attach_params, attach_params))
                 print("CMD", shlex.join(new_args))
         else:
             out_args = root_args.copy()
             out_args.append(cmd_name)
-            out_args.extend(
-                format_params(sub_ctx.params, cmd_params)
-            )
+            out_args.extend(format_params(sub_ctx.params, cmd_params))
             print("CMD", shlex.join(out_args))
 
 

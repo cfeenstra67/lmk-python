@@ -146,7 +146,9 @@ class ProcessMonitorController:
         exit_code = -1
         error = None
         try:
-            self.process = await self.monitor.attach(self.target_pid, output_path, log_path)
+            self.process = await self.monitor.attach(
+                self.target_pid, output_path, log_path
+            )
             self.target_pid = self.process.pid
             exit_code = await self.process.wait()
         except Exception as err:

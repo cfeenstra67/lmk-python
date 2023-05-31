@@ -101,11 +101,12 @@ async def attach_simple(
         raise
 
 
-
 def get_interrupt_action() -> str:
     while True:
         try:
-            input_value = input("interrupt/detach/resume process (i/d/r): ").lower().strip()
+            input_value = (
+                input("interrupt/detach/resume process (i/d/r): ").lower().strip()
+            )
             if input_value in {"i", "d", "r"}:
                 return input_value
         except KeyboardInterrupt:
@@ -141,6 +142,6 @@ async def attach_interactive(job_dir: str) -> int:
             if action == "d":
                 await attachment.stop()
                 break
-            
+
             if action == "r":
                 attachment.resume()
