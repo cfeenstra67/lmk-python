@@ -192,6 +192,7 @@ async def main(argv: List[str]) -> None:
     parser.add_argument("pid", type=int, help="Pid to monitor")
     parser.add_argument("output_file", help="File to redirect output to")
     parser.add_argument("-l", "--log-level", default="ERROR", help="Set log level")
+    parser.add_argument("-m", "--message", default=None, help="Display message when taking over process")
 
     args = parser.parse_args(argv)
 
@@ -243,24 +244,28 @@ async def main(argv: List[str]) -> None:
         LOGGER.error("Process attach failed: %s", stream.GetData())
         return 1
 
-    detached_msg = (
-        f"\n{args.pid}: This process is now being monitored by LMK\n"
-        f"Output is now being redirected to {args.output_file}\n"
-        f"Run \\`disown\\` so it will stay running even if you "
-        f"close your terminal"
-    )
+    commands = [
+        f"expr int $fd = (int) open({json.dumps(args.output_file)}, 1089)",
+    ]
+    if args.message is not None:
+        commands.append(f"expr int $xd = (int) dup(1)")
+
+    commands.extend([
+        f"expr (void) dup2($fd, 1)",
+        f"expr (void) dup2($fd, 2)",
+    ])
+
+    if args.message is not None:
+        commands.extend([
+            f"expr (void) write($xd, {json.dumps(args.message)}, {len(args.message)})",
+            f"expr (void) close($xd)",
+        ])
+    
+    commands.append(f"expr (void) close($fd)")
 
     run_commands(
         command_interpreter,
-        [
-            f"expr int $fd = (int) open({json.dumps(args.output_file)}, 1089)",
-            f"expr int $xd = (int) dup(1)",
-            f"expr (void) dup2($fd, 1)",
-            f"expr (void) dup2($fd, 2)",
-            f"expr (void) write($xd, {json.dumps(detached_msg)}, {len(detached_msg)})",
-            f"expr (void) close($fd)",
-            f"expr (void) close($xd)",
-        ]
+        commands
     )
     process.Continue()
 

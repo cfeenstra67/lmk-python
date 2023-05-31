@@ -61,6 +61,14 @@ class JobManager:
         pid_file = os.path.join(self.pids_dir, f"{job_id}.pid")
         return NewJob(job_id, job_dir, pid_file)
 
+    def get_not_started_job(self, job_id: str) -> NewJob:
+        job_dir = os.path.join(self.jobs_dir, job_id)
+        if not os.path.exists(job_dir):
+            raise ValueError(f"Job does not exist: {job_id}")
+        
+        pid_file = os.path.join(self.pids_dir, f"{job_id}.pid")
+        return NewJob(job_id, job_dir, pid_file)
+
     async def get_job(self, job_id: str) -> Optional[RunningJob]:
         job_dir = os.path.join(self.jobs_dir, job_id)
         if not os.path.exists(job_dir):
