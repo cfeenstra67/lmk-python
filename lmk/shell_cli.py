@@ -1,3 +1,4 @@
+import psutil
 import shlex
 import sys
 from typing import List, Any, Dict
@@ -6,7 +7,7 @@ import click
 
 from lmk.cli import cli
 from lmk.process.manager import JobManager
-from lmk.process.shell_jobs import resolve_pid
+from lmk.shell_plugin import resolve_pid
 
 
 def format_params(values: Dict[str, Any], params: List[click.Parameter]) -> List[str]:
@@ -22,7 +23,10 @@ def format_params(values: Dict[str, Any], params: List[click.Parameter]) -> List
             continue
 
         if isinstance(param, click.Argument):
-            out.append(value)
+            if isinstance(value, tuple):
+                out.extend(value)
+            else:
+                out.append(value)
         elif param.type == click.BOOL:
             out.append(param.opts[0] if value else param.secondary_opts[0])
         else:
@@ -44,8 +48,13 @@ def process_cmd(
         cmd_params = cmd.get_params(sub_ctx)
         if cmd_name == "monitor":
             pid, shell_job_id = resolve_pid(sub_ctx.params["pid"])
+            name = sub_ctx.params["name"]
+            if name is None:
+                proc = psutil.Process(pid)
+                name = proc.cmdline()[0]
+
             if sub_ctx.params["job"] is None:
-                job_id = manager.create_job(sub_ctx.params["name"]).job_id
+                job_id = manager.create_job(name).job_id
             else:
                 job_id = sub_ctx.params["job"]
 
@@ -58,7 +67,10 @@ def process_cmd(
             new_args = root_args.copy()
             new_args.append(cmd_name)
             new_args.extend(format_params(new_params, cmd_params))
-            print("CMD", shlex.join(new_args))
+            print(
+                "CMD" if sub_ctx.params["attach"] else "LASTCMD",
+                shlex.join(new_args)
+            )
 
             print("DISOWN", shell_job_id)
 
@@ -69,12 +81,12 @@ def process_cmd(
                 attach_params = attach_command.get_params(ctx)
                 new_attach_params = {"job_id": job_id}
                 new_args.extend(format_params(new_attach_params, attach_params))
-                print("CMD", shlex.join(new_args))
+                print("LASTCMD", shlex.join(new_args))
         else:
             out_args = root_args.copy()
             out_args.append(cmd_name)
             out_args.extend(format_params(sub_ctx.params, cmd_params))
-            print("CMD", shlex.join(out_args))
+            print("LASTCMD", shlex.join(out_args))
 
 
 def main(args: List[str]) -> int:

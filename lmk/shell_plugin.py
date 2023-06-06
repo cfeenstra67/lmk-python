@@ -155,7 +155,7 @@ def resolve_pid(pid: str) -> Tuple[int, int]:
     if shell_jobs is None:
         click.secho(
             "Cannot use bash job syntax without the shell plugin;"
-            "install the shell plugin using `lmk shell-plugin >> ~/.zshrc`"
+            "install the shell plugin using `lmk shell-plugin --install`"
         )
         raise click.Abort
 
@@ -167,6 +167,23 @@ def resolve_pid(pid: str) -> Tuple[int, int]:
             break
 
     if match is None:
-        raise RuntimeError(f"No job found with ID {job_id}")
+        raise NoShellJobFound(job_id)
 
     return match.pid, match.job_id
+
+
+class CannotDetermineShell(click.ClickException):
+    """
+    """
+    def __init__(self) -> None:
+        super().__init__("Cannot determine shell")
+        self.exit_code = 1
+
+
+class NoShellJobFound(click.ClickException):
+    """
+    """
+    def __init__(self, job_id: str) -> None:
+        super().__init__(f"No shell job found with ID: {job_id}")
+        self.job_id = job_id
+        self.exit_code = 1

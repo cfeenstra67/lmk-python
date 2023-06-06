@@ -1,5 +1,6 @@
 import click
 import os
+import psutil
 import signal as signal_module
 import sys
 import textwrap
@@ -43,7 +44,7 @@ def cli(ctx: click.Context, log_level: str, base_path: str):
 
 
 @cli.command()
-@click.option("-f", "--force", is_flag=True, default=False)
+@click.option("--force/--no-force", is_flag=True, default=True)
 def login(force):
     instance = get_instance()
     instance.authenticate(force=force)
@@ -116,7 +117,13 @@ async def monitor(
     notify: str,
     job: str,
 ):
+    pid, _ = resolve_pid(pid)
+
     manager: JobManager = ctx.obj["manager"]
+    if name is None:
+        proc = psutil.Process(pid)
+        name = proc.cmdline()[0]
+
     if job is None:
         job_obj = manager.create_job(name)
     else:
@@ -125,7 +132,6 @@ async def monitor(
     click.secho(f"Job ID: {job_obj.job_id}", fg="green", bold=True)
 
     monitor = LLDBProcessMonitor(ctx.obj["log_level"])
-    pid, _ = resolve_pid(pid)
 
     controller = ProcessMonitorController(pid, monitor, job_obj.job_dir, notify)
 
