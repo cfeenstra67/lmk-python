@@ -1,8 +1,11 @@
 import abc
+from typing import List
 
 
 class MonitoredProcess(abc.ABC):
     pid: int
+
+    command: List[str]
 
     @abc.abstractmethod
     async def wait(self) -> int:

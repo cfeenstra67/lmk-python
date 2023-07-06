@@ -358,33 +358,6 @@ paths:
                 $ref: '#/components/schemas/EventResponse'
       tags:
         - event
-    get:
-      operationId: searchEvents
-      parameters:
-        - name: query
-          required: false
-          in: query
-          schema:
-            type: string
-        - name: continuationToken
-          required: false
-          in: query
-          schema:
-            type: string
-        - name: pageSize
-          required: false
-          in: query
-          schema:
-            type: number
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventsResponse'
-      tags:
-        - event
   /v1/session:
     post:
       operationId: createSession
@@ -402,6 +375,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SessionResponse'
+      tags:
+        - session
+  /v1/session/{sessionId}:
+    get:
+      operationId: getSession
+      parameters:
+        - name: sessionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+      tags:
+        - session
+    patch:
+      operationId: updateSession
+      parameters:
+        - name: sessionId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSessionRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+      tags:
+        - session
+  /v1/session/{sessionId}/end:
+    post:
+      operationId: endSession
+      parameters:
+        - name: sessionId
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+      tags:
+        - session
+  /v1/session/{sessionId}/action:
+    post:
+      operationId: sessionAction
+      parameters:
+        - name: sessionId
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionActionRequest'
+      responses:
+        '201':
+          description: ''
       tags:
         - session
   /v1/notificationChannel:
@@ -512,6 +564,34 @@ paths:
                 $ref: '#/components/schemas/NotificationChannelResponse'
       tags:
         - notification
+  /v1/search:
+    get:
+      operationId: search
+      parameters:
+        - name: query
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: continuationToken
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: pageSize
+          required: false
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+      tags:
+        - search
   /healthcheck:
     get:
       operationId: healthcheck
@@ -1002,43 +1082,163 @@ components:
         - contentType
         - channels
         - createdAt
-    EventsResponse:
+    JupyterSessionState:
       type: object
       properties:
-        total:
-          type: number
-        continuationToken:
+        url:
           type: string
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/EventResponse'
+        notebookName:
+          type: string
+        state:
+          type: string
+        executionNum:
+          type: number
+        cellStartedAt:
+          type: string
+        cellFinishedAt:
+          type: string
+        notifyOn:
+          type: string
+        notifyChannel:
+          type: string
       required:
-        - total
-        - events
+        - state
+        - executionNum
+        - notifyOn
+    ProcessSessionState:
+      type: object
+      properties:
+        hostname:
+          type: string
+        command:
+          type: string
+        pid:
+          type: number
+        notifyOn:
+          type: string
+        notifyChannel:
+          type: string
+        exitCode:
+          type: number
+      required:
+        - hostname
+        - command
+        - pid
+        - notifyOn
     CreateSessionRequest:
       type: object
       properties:
+        state:
+          oneOf:
+            - $ref: '#/components/schemas/JupyterSessionState'
+            - $ref: '#/components/schemas/ProcessSessionState'
         name:
           type: string
-        namePrefix:
+        type:
           type: string
+      required:
+        - name
+        - type
     SessionResponse:
       type: object
       properties:
+        state:
+          oneOf:
+            - $ref: '#/components/schemas/JupyterSessionState'
+            - $ref: '#/components/schemas/ProcessSessionState'
         sessionId:
           type: string
         name:
           type: string
+        type:
+          enum:
+            - jupyter
+            - process
+            - none
+          type: string
         createdAt:
           type: string
+        createdByActor:
+          $ref: '#/components/schemas/ActorResponse'
         lastUpdatedAt:
           type: string
+        lastUpdatedByActor:
+          $ref: '#/components/schemas/ActorResponse'
+        endedAt:
+          type: string
+          nullable: true
+        endedByActor:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ActorResponse'
       required:
         - sessionId
         - name
+        - type
         - createdAt
+        - createdByActor
         - lastUpdatedAt
+        - lastUpdatedByActor
+        - endedAt
+        - endedByActor
+    PartialJupyterSessionState:
+      type: object
+      properties:
+        url:
+          type: string
+        notebookName:
+          type: string
+        state:
+          type: string
+        executionNum:
+          type: number
+        cellStartedAt:
+          type: string
+        cellFinishedAt:
+          type: string
+        notifyOn:
+          type: string
+        notifyChannel:
+          type: string
+    PartialProcessSessionState:
+      type: object
+      properties:
+        hostname:
+          type: string
+        command:
+          type: string
+        pid:
+          type: number
+        notifyOn:
+          type: string
+        notifyChannel:
+          type: string
+        exitCode:
+          type: number
+    UpdateSessionRequest:
+      type: object
+      properties:
+        state:
+          oneOf:
+            - $ref: '#/components/schemas/PartialJupyterSessionState'
+            - $ref: '#/components/schemas/PartialProcessSessionState'
+    ProcessSendSignalRequest:
+      type: object
+      properties:
+        signal:
+          type: string
+      required:
+        - signal
+    SessionActionRequest:
+      type: object
+      properties:
+        body:
+          oneOf:
+            - $ref: '#/components/schemas/ProcessSendSignalRequest'
+        action:
+          type: string
+      required:
+        - action
     EmailChannelPayload:
       type: object
       properties:
@@ -1167,3 +1367,108 @@ components:
           type: string
         order:
           type: number
+    EventSearchResultResponse:
+      type: object
+      properties:
+        resultType:
+          type: string
+          enum:
+            - event
+        eventId:
+          type: string
+        sessionId:
+          type: string
+        userId:
+          type: string
+        actor:
+          $ref: '#/components/schemas/ActorResponse'
+        message:
+          type: string
+        contentType:
+          enum:
+            - text/plain
+            - text/markdown
+          type: string
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationChannelInfo'
+        createdAt:
+          type: string
+      required:
+        - resultType
+        - eventId
+        - userId
+        - actor
+        - message
+        - contentType
+        - channels
+        - createdAt
+    SessionSearchResultResponse:
+      type: object
+      properties:
+        state:
+          oneOf:
+            - $ref: '#/components/schemas/JupyterSessionState'
+            - $ref: '#/components/schemas/ProcessSessionState'
+        resultType:
+          type: string
+          enum:
+            - session
+        sessionId:
+          type: string
+        name:
+          type: string
+        type:
+          enum:
+            - jupyter
+            - process
+            - none
+          type: string
+        createdAt:
+          type: string
+        createdByActor:
+          $ref: '#/components/schemas/ActorResponse'
+        lastUpdatedAt:
+          type: string
+        lastUpdatedByActor:
+          $ref: '#/components/schemas/ActorResponse'
+        endedAt:
+          type: string
+          nullable: true
+        endedByActor:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ActorResponse'
+      required:
+        - resultType
+        - sessionId
+        - name
+        - type
+        - createdAt
+        - createdByActor
+        - lastUpdatedAt
+        - lastUpdatedByActor
+        - endedAt
+        - endedByActor
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/SessionSearchResultResponse'
+              - $ref: '#/components/schemas/EventSearchResultResponse'
+            discriminator:
+              propertyName: resultType
+              mapping:
+                event: '#/components/schemas/EventSearchResultResponse'
+                session: '#/components/schemas/SessionSearchResultResponse'
+        total:
+          type: number
+        continuationToken:
+          type: string
+      required:
+        - results
+        - total

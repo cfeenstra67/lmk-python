@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import os
+import psutil
 from typing import List
 
 from lmk.utils.asyncio import check_output
@@ -47,10 +48,15 @@ class LLDBMonitoredProcess(MonitoredProcess):
     """ """
 
     def __init__(
-        self, process: asyncio.subprocess.Process, pid: int, log_file: io.BytesIO
+        self,
+        process: asyncio.subprocess.Process,
+        pid: int,
+        command: List[str],
+        log_file: io.BytesIO
     ) -> None:
         self.process = process
         self.pid = pid
+        self.command = command
         self.log_file = log_file
 
     async def send_signal(self, signum: int) -> None:
@@ -120,4 +126,6 @@ class LLDBProcessMonitor(ProcessMonitor):
 
         LOGGER.info("Process attached")
 
-        return LLDBMonitoredProcess(process, pid, log_file)
+        command = psutil.Process(pid).cmdline()
+
+        return LLDBMonitoredProcess(process, pid, command, log_file)

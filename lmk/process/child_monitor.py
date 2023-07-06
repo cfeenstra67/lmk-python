@@ -11,10 +11,12 @@ class MonitoredChildProcess(MonitoredProcess):
     def __init__(
         self,
         process: asyncio.subprocess.Process,
+        command: List[str],
         output_fd: int,
         output_path: str,
     ) -> None:
         self.process = process
+        self.command = command
         self.output_fd = output_fd
         self.output_path = output_path
 
@@ -66,4 +68,4 @@ class ChildMonitor(ProcessMonitor):
             bufsize=0,
             start_new_session=True,
         )
-        return MonitoredChildProcess(proc, read_output, output_path)
+        return MonitoredChildProcess(proc, self.argv, read_output, output_path)

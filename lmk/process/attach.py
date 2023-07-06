@@ -6,28 +6,11 @@ import os
 import signal
 import sys
 
-import aiohttp
-
-from lmk.process.client import send_signal
+from lmk.process.client import send_signal, wait_for_job
 from lmk.utils import wait_for_socket, shutdown_process, socket_exists
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-async def wait_for_job(socket_path: str) -> int:
-    connector = aiohttp.UnixConnector(path=socket_path)
-    async with aiohttp.ClientSession(connector=connector) as session:
-        while True:
-            async with session.ws_connect("http://daemon/wait", timeout=0.5) as ws:
-                async for message in ws:
-                    if message.type == aiohttp.WSMsgType.TEXT:
-                        response = json.loads(message.data)
-                        return response["exit_code"]
-                    elif message.type == aiohttp.WSMsgType.CLOSE:
-                        break
-                    elif message.type == aiohttp.WSMsgType.ERROR:
-                        break
 
 
 class ProcessAttachment:
@@ -49,7 +32,8 @@ class ProcessAttachment:
 
     async def wait(self) -> int:
         if socket_exists(self.socket_path):
-            exit_code = await wait_for_job(self.socket_path)
+            resp = await wait_for_job(self.socket_path)
+            exit_code = resp["exit_code"]
         elif os.path.isfile(self.result_path):
             with open(self.result_path) as f:
                 result = json.load(f)

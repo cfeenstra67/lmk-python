@@ -1,4 +1,5 @@
 import configparser
+import contextlib
 import inspect
 import json
 import logging
@@ -7,8 +8,9 @@ import threading
 import time
 import webbrowser
 from datetime import datetime, timedelta
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict, AsyncContextManager
 
+import aiohttp
 from blinker import signal
 from dateutil.parser import parse as parse_dt
 
@@ -18,11 +20,13 @@ from lmk.constants import APP_ID, API_URL
 from lmk.generated.api.event_api import EventApi
 from lmk.generated.api.headless_auth_api import HeadlessAuthApi
 from lmk.generated.api.notification_api import NotificationApi
+from lmk.generated.api.session_api import SessionApi
 from lmk.generated.exceptions import ApiException
 from lmk.generated.models.access_token_response import AccessTokenResponse
 from lmk.generated.models.create_headless_auth_session_request import (
     CreateHeadlessAuthSessionRequest,
 )
+from lmk.generated.models.create_session_request import CreateSessionRequest
 from lmk.generated.models.event_request import (
     EventRequest,
     EventNotificationConfiguration,
@@ -37,6 +41,8 @@ from lmk.generated.models.headless_auth_session_response import (
 from lmk.generated.models.notification_channel_response import (
     NotificationChannelResponse,
 )
+from lmk.generated.models.create_session_request_state import CreateSessionRequestState
+from lmk.generated.models.session_response import SessionResponse
 from lmk.jupyter import is_jupyter, run_javascript
 
 
@@ -327,7 +333,7 @@ class Instance:
         self, scope: Optional[str] = None, async_req: bool = False
     ) -> HeadlessAuthSessionResponse:
         if scope is None:
-            scope = "event.publish event.notify channel.read"
+            scope = "event.publish event.notify channel.read session.create"
 
         api = HeadlessAuthApi(self.client)
         return api.create_headless_auth_session(
@@ -485,6 +491,61 @@ class Instance:
                 _headers={"Authorization": f"Bearer {access_token}"},
             ),
         )
+    
+    def create_session(
+        self,
+        name: str,
+        type: str,
+        state: Optional[Dict[str, Any]] = None,
+        async_req: bool = False,
+    ) -> SessionResponse:
+        api = SessionApi(self.client)
+
+        return pipeline(async_req)(
+            lambda _: self._get_access_token(async_req),
+            lambda access_token: api.create_session(
+                CreateSessionRequest(
+                    name=name,
+                    state=CreateSessionRequestState.from_dict(state),
+                    type=type,
+                ),
+                async_req=async_req,
+                _headers={"Authorization": f"Bearer {access_token}"}
+            )
+        )
+
+    def end_session(
+        self,
+        session_id: str,
+        async_req: bool = False,
+    ) -> None:
+        api = SessionApi(self.client)
+
+        return pipeline(async_req)(
+            lambda _: self._get_access_token(async_req),
+            lambda access_token: api.end_session(
+                session_id,
+                _headers={"Authorization": f"Bearer {access_token}"}
+            )
+        )
+
+    @contextlib.asynccontextmanager
+    async def session_connect(self, session_id: str, read_only: bool = True) -> AsyncContextManager[aiohttp.ClientWebSocketResponse]:
+        access_token = await self._get_access_token_async()
+
+        url = self.client.configuration.host + f"/v1/session/ws?token={access_token}"
+
+        async with aiohttp.ClientSession() as session:
+            async with session.ws_connect(url) as ws:
+                await ws.send_json({
+                    "event": "connect",
+                    "data": {
+                        "sessionId": session_id,
+                        "readOnly": read_only
+                    }
+                })
+
+                yield ws
 
 
 DEFAULT_INSTANCE = None

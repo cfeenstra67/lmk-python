@@ -86,15 +86,14 @@ async def run(
     click.secho(f"Job ID: {job.job_id}", fg="green", bold=True)
 
     monitor = ChildMonitor(command)
-    controller = ProcessMonitorController(-1, monitor, job.job_dir, notify)
+    controller = ProcessMonitorController(job.job_id, -1, monitor, job.job_dir, notify)
 
     if daemon:
-        run_daemon(job, controller)
+        await run_daemon(job, controller)
         if attach:
             await attach_interactive(job.job_dir)
-            return
-
-    await run_foreground(job, controller, attach)
+    else:
+        await run_foreground(job, controller, attach)
 
 
 monitor_args = stack_decorators(
@@ -133,9 +132,9 @@ async def monitor(
 
     monitor = LLDBProcessMonitor(ctx.obj["log_level"])
 
-    controller = ProcessMonitorController(pid, monitor, job_obj.job_dir, notify)
+    controller = ProcessMonitorController(job_obj.job_id, pid, monitor, job_obj.job_dir, notify)
 
-    run_daemon(job_obj, controller)
+    await run_daemon(job_obj, controller)
 
     if attach:
         exit_code = await attach_interactive(job_obj.job_dir)
