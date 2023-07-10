@@ -89,11 +89,12 @@ async def run(
     controller = ProcessMonitorController(job.job_id, -1, monitor, job.job_dir, notify)
 
     if daemon:
-        await run_daemon(job, controller)
+        await run_daemon(job, controller, ctx.obj["log_level"])
         if attach:
-            await attach_interactive(job.job_dir)
+            exit_code = await attach_interactive(job.job_dir)
+            sys.exit(exit_code or 0)
     else:
-        await run_foreground(job, controller, attach)
+        await run_foreground(job, controller, ctx.obj["log_level"], attach)
 
 
 monitor_args = stack_decorators(
@@ -130,15 +131,15 @@ async def monitor(
 
     click.secho(f"Job ID: {job_obj.job_id}", fg="green", bold=True)
 
-    monitor = LLDBProcessMonitor(ctx.obj["log_level"])
+    monitor = LLDBProcessMonitor()
 
     controller = ProcessMonitorController(job_obj.job_id, pid, monitor, job_obj.job_dir, notify)
 
-    await run_daemon(job_obj, controller)
+    await run_daemon(job_obj, controller, ctx.obj["log_level"])
 
     if attach:
         exit_code = await attach_interactive(job_obj.job_dir)
-        sys.exit(exit_code)
+        sys.exit(exit_code or 0)
 
 
 @async_command(cli)
@@ -148,7 +149,12 @@ async def attach(ctx: click.Context, job_id: str):
     manager = ctx.obj["manager"]
     job = await manager.get_job(job_id)
 
-    await attach_interactive(job.job_dir)
+    if not job.running:
+        click.secho(f"Job is not running: {job_id}", fg="red")
+        raise click.Abort
+
+    exit_code = await attach_interactive(job.job_dir)
+    sys.exit(exit_code or 0)
 
 
 def pad(value: str, length: int, character: str = " ") -> str:
@@ -193,6 +199,10 @@ async def kill(ctx: click.Context, job_id: str, signal: str):
     manager = ctx.obj["manager"]
     job = await manager.get_job(job_id)
 
+    if not job.running:
+        click.secho(f"Job is not running: {job_id}", fg="red")
+        raise click.Abort
+
     if signal.isdigit():
         signal_value = int(signal)
     else:
@@ -217,6 +227,10 @@ async def kill(ctx: click.Context, job_id: str, signal: str):
 async def notify(ctx: click.Context, job_id: str, notify: str) -> None:
     manager = ctx.obj["manager"]
     job = await manager.get_job(job_id)
+
+    if not job.running:
+        click.secho(f"Job is not running: {job_id}", fg="red")
+        raise click.Abort
 
     socket_path = os.path.join(job.job_dir, "daemon.sock")
     await set_notify_on(socket_path, notify)

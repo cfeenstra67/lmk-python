@@ -7,17 +7,17 @@ import os
 import shlex
 import signal
 import socket
+import textwrap
 from datetime import datetime
 from functools import wraps
-from typing import Optional, Callable, List
+from typing import Optional, Callable, List, Any
 
-import aiohttp
 from aiohttp import web
 
 from lmk.generated.models.session_response import SessionResponse
 from lmk.instance import get_instance
 from lmk.process.monitor import ProcessMonitor, MonitoredProcess
-from lmk.utils import setup_logging, socket_exists
+from lmk.utils import setup_logging, socket_exists, read_last_lines
 
 
 LOGGER = logging.getLogger(__name__)
@@ -164,6 +164,12 @@ class ProcessMonitorController:
 
         return web.json_response({"ok": True})
 
+    async def _handle_session_action(self, action: str, body: Optional[Any]) -> None:
+        if action == "sendSignal":
+            await self.send_signal(body["signal"])
+            return
+        LOGGER.error("Invalid session action: %s, body: %s", action, body)
+
     @contextlib.asynccontextmanager
     async def _session_ctx(self) -> None:
         instance = get_instance()
@@ -179,48 +185,53 @@ class ProcessMonitorController:
             },
             async_req=True
         )
+        LOGGER.info("Created session: %s", self.session.session_id)
+
         async with instance.session_connect(self.session.session_id, False) as ws:
+
             async def handle_updates():
-                while not self.done_event.is_set():
+                while True:
                     update_task = asyncio.create_task(self.update_event.wait())
                     done_task = asyncio.create_task(self.done_event.wait())
                     await asyncio.wait([update_task, done_task], return_when=asyncio.FIRST_COMPLETED)
 
                     if update_task.done():
                         self.update_event.clear()
-                        await ws.send_json({
+                        await ws.send({
                             "notifyOn": self.notify_on,
                             "notifyChannel": self.channel_id,
                         })
 
                     if done_task.done():
-                        await ws.send_json({
+                        LOGGER.info("Sending session exit message; exit code %s", self.exit_code)
+                        await ws.send({
                             "notifyOn": self.notify_on,
                             "notifyChannel": self.channel_id,
                             "exitCode": self.exit_code
                         })
+                        LOGGER.info("Sent message")
                         await ws.close()
+                        break
 
             async def handle_messages():
                 async for message in ws:
-                    if message.type == aiohttp.WSMsgType.TEXT:
-                        response = json.loads(message.data)
-                        if not response["ok"]:
-                            LOGGER.error("Error in websocket: %s", response)
-                            continue
-                        msg_type = response["message"]["type"]
-                        if msg_type == "update":
-                            self.notify_on = response["message"]["session"]["state"]["notifyOn"]
-                            self.channel_id = response["message"]["session"]["state"].get("notifyChannel")
-                        elif msg_type == "action":
-                            LOGGER.info("Action: %s", response)
-                        else:
-                            LOGGER.warn("Unhandled ws message type: %s", msg_type)
-                    elif message.type == aiohttp.WSMsgType.CLOSE:
-                        break
-                    elif message.type == aiohttp.WSMsgType.ERROR:
-                        LOGGER.error("Web socket error: %s", message.data)
-                        break
+                    LOGGER.debug("Web socket message: %s", message)
+                    if not message["ok"]:
+                        LOGGER.error("Error in websocket: %s", message)
+                        continue
+                    msg_type = message["message"]["type"]
+                    if msg_type == "update":
+                        self.notify_on = message["message"]["session"]["state"]["notifyOn"]
+                        self.channel_id = message["message"]["session"]["state"].get("notifyChannel")
+                    elif msg_type == "action":
+                        try:
+                            action = message["message"]["action"]
+                            body = message["message"].get("body")
+                            await self._handle_session_action(action, body)
+                        except Exception as err:
+                            LOGGER.exception("Error running action for message: %s", message)
+                    else:
+                        LOGGER.warn("Unhandled ws message type: %s", msg_type)
 
             updates_task = asyncio.create_task(handle_updates())
             messages_task = asyncio.create_task(handle_messages())
@@ -232,10 +243,6 @@ class ProcessMonitorController:
                     self.session.session_id,
                     async_req=True
                 )
-
-                updates_task.result()
-                messages_task.result()
-
 
     async def _run_server(self) -> None:
         socket_path = os.path.join(self.output_dir, "daemon.sock")
@@ -266,7 +273,7 @@ class ProcessMonitorController:
                     os.remove(socket_path)
                 raise
 
-    async def _run_command(self, log_path: str) -> None:
+    async def _run_command(self, log_path: str, log_level: str) -> None:
         async with contextlib.AsyncExitStack() as stack:
             output_path = os.path.join(self.output_dir, "output.log")
 
@@ -278,7 +285,7 @@ class ProcessMonitorController:
                     pass
 
                 self.process = await self.monitor.attach(
-                    self.target_pid, output_path, log_path
+                    self.target_pid, output_path, log_path, log_level,
                 )
                 self.target_pid = self.process.pid
                 self.target_command = self.process.command
@@ -322,8 +329,22 @@ class ProcessMonitorController:
                 )
                 instance = get_instance()
                 try:
+                    message = textwrap.dedent(
+                        f"""
+                        Process exited with code **{exit_code}**:
+                        ```bash
+                        {shlex.join(self.target_command) if self.target_command else "<unknown>"}
+                        ```
+                        """
+                    ).strip()
+
+                    logs = "\n".join(read_last_lines(output_path, 10, 10000))
+                    
+                    if logs:
+                        message += f"\n\nMost recent logs:\n```\n{logs}\n```"
+
                     await instance.send_notification(
-                        f"Process exited with code **{exit_code}**",
+                        message,
                         notification_channels=[self.channel_id]
                         if self.channel_id
                         else None,
@@ -361,7 +382,7 @@ class ProcessMonitorController:
             raise ProcessNotAttached
         await self.process.send_signal(signum)
 
-    async def run(self, log_path: str) -> None:
+    async def run(self, log_path: str, log_level: str) -> None:
         self.started_at = datetime.utcnow()
 
         tasks = []
@@ -369,7 +390,7 @@ class ProcessMonitorController:
 
         LOGGER.info("Running main process")
         try:
-            await self._run_command(log_path)
+            await self._run_command(log_path, log_level)
         except Exception:
             LOGGER.exception("Error running command")
             raise
@@ -388,10 +409,12 @@ class ProcessMonitorDaemon(multiprocessing.Process):
         self,
         controller: ProcessMonitorController,
         pid_file: str,
+        log_level: str = "INFO"
     ) -> None:
         super().__init__(daemon=False)
         self.controller = controller
         self.pid_file = pid_file
+        self.log_level = log_level
 
     def run(self) -> None:
         # Double fork so the process continues to run
@@ -403,16 +426,17 @@ class ProcessMonitorDaemon(multiprocessing.Process):
         os.setsid()
 
         log_path = os.path.join(self.controller.output_dir, "lmk.log")
-        setup_logging(log_file=log_path)
+        with open(log_path, "a+") as log_stream:
+            setup_logging(log_stream=log_stream, level=self.log_level)
 
-        with pid_ctx(self.pid_file, self.pid):
-            loop = asyncio.new_event_loop()
+            with pid_ctx(self.pid_file, self.pid):
+                loop = asyncio.new_event_loop()
 
-            try:
-                loop.run_until_complete(self.controller.run(log_path))
-            finally:
-                loop.run_until_complete(loop.shutdown_asyncgens())
-                loop.close()
+                try:
+                    loop.run_until_complete(self.controller.run(log_path, self.log_level))
+                finally:
+                    loop.run_until_complete(loop.shutdown_asyncgens())
+                    loop.close()
 
 
 class ProcessNotAttached(Exception):

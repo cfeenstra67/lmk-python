@@ -12,12 +12,12 @@ from lmk.utils.os import socket_exists
 
 
 async def run_foreground(
-    job: NewJob, controller: ProcessMonitorController, attach: bool = True
+    job: NewJob, controller: ProcessMonitorController, log_level: str = "INFO", attach: bool = True,
 ) -> None:
     with pid_ctx(job.pid_file, os.getpid()):
         log_path = os.path.join(job.job_dir, "lmk.log")
         tasks = []
-        tasks.append(asyncio_create_task(controller.run(log_path)))
+        tasks.append(asyncio_create_task(controller.run(log_path, log_level)))
         if attach:
             tasks.append(asyncio_create_task(attach_simple(job.job_dir)))
 
@@ -28,8 +28,8 @@ async def run_foreground(
             await asyncio.wait(tasks)
 
 
-async def run_daemon(job: NewJob, controller: ProcessMonitorController) -> None:
-    process = ProcessMonitorDaemon(controller, job.pid_file)
+async def run_daemon(job: NewJob, controller: ProcessMonitorController, log_level: str = "INFO") -> None:
+    process = ProcessMonitorDaemon(controller, job.pid_file, log_level)
     process.start()
 
     socket_path = os.path.join(job.job_dir, "daemon.sock")

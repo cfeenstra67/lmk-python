@@ -1226,7 +1226,7 @@ components:
       type: object
       properties:
         signal:
-          type: string
+          type: number
       required:
         - signal
     SessionActionRequest:

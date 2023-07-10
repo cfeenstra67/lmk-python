@@ -1,3 +1,4 @@
+import io
 from logging.config import dictConfig
 from typing import Optional
 
@@ -10,10 +11,13 @@ def setup_logging(
     level: str = "INFO",
     format: str = LOG_FORMAT,
     log_file: Optional[str] = None,
+    log_stream: Optional[io.StringIO] = None,
 ) -> None:
     handler_kwargs = {"class": "logging.StreamHandler"}
     if log_file is not None:
         handler_kwargs = {"class": "logging.FileHandler", "filename": log_file}
+    elif log_stream is not None:
+        handler_kwargs = {"class": "logging.StreamHandler", "stream": log_stream}
 
     config = {
         "version": 1,
@@ -28,7 +32,7 @@ def setup_logging(
         },
         "loggers": {
             "": {"handlers": ["default"], "level": "ERROR", "propagate": False},
-            "lmk": {"handlers": ["default"], "level": "INFO", "propagate": False},
+            "lmk": {"handlers": ["default"], "level": level, "propagate": False},
         },
     }
 

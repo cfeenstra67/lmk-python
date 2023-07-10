@@ -5,9 +5,10 @@ import logging
 import os
 import signal
 import sys
+from typing import Optional
 
 from lmk.process.client import send_signal, wait_for_job
-from lmk.utils import wait_for_socket, shutdown_process, socket_exists
+from lmk.utils import wait_for_socket, shutdown_process, socket_exists, input_async
 
 
 LOGGER = logging.getLogger(__name__)
@@ -85,12 +86,13 @@ async def attach_simple(
         raise
 
 
-def get_interrupt_action() -> str:
+async def get_interrupt_action() -> str:
     while True:
         try:
-            input_value = (
-                input("interrupt/detach/resume process (i/d/r): ").lower().strip()
+            input_value = await input_async(
+                "interrupt/detach/resume process (i/d/r): "
             )
+            input_value = input_value.lower().strip()
             if input_value in {"i", "d", "r"}:
                 return input_value
         except KeyboardInterrupt:
@@ -99,7 +101,7 @@ def get_interrupt_action() -> str:
             print(f"Invalid selection: {input_value}")
 
 
-async def attach_interactive(job_dir: str) -> int:
+async def attach_interactive(job_dir: str) -> Optional[int]:
     socket_path = os.path.join(job_dir, "daemon.sock")
 
     attachment = await attach(job_dir)
@@ -108,16 +110,28 @@ async def attach_interactive(job_dir: str) -> int:
     while True:
         task = asyncio.create_task(attachment.wait())
         try:
-            return await task
+            return await asyncio.shield(task)
         except (asyncio.CancelledError, KeyboardInterrupt):
-            task.cancel()
+            # print("ERROR123")
+            # task.cancel()
 
             if interupts > 0:
+                task.cancel()
                 await attachment.stop()
                 break
 
             attachment.pause()
-            action = get_interrupt_action()
+
+            action_task = asyncio.create_task(get_interrupt_action())
+            
+            await asyncio.wait([action_task, task], return_when=asyncio.FIRST_COMPLETED)
+
+            if task.done():
+                return task.result()
+
+            task.cancel()
+            
+            action = action_task.result()
             if action == "i":
                 attachment.resume()
                 await send_signal(socket_path, signal.SIGINT)
@@ -129,3 +143,5 @@ async def attach_interactive(job_dir: str) -> int:
 
             if action == "r":
                 attachment.resume()
+    
+    return None

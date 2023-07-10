@@ -2,8 +2,9 @@ import asyncio
 import contextlib
 import logging
 import signal
+import sys
 import time
-from functools import partial
+from functools import partial, wraps
 from typing import Optional, Awaitable, Any, AsyncContextManager, List, Callable
 
 from lmk.utils.os import socket_exists
@@ -142,6 +143,13 @@ async def wait_for_fd(fd: int) -> None:
     await future
 
 
+async def input_async(prompt: str) -> str:
+    print(prompt, end="")
+    sys.stdout.flush()
+    await wait_for_fd(sys.stdin.fileno())
+    return sys.stdin.readline()
+
+
 async def check_output(args: List[str]) -> str:
     proc = await asyncio.create_subprocess_exec(
         *args,
@@ -169,3 +177,57 @@ class CalledProcessError(Exception):
             f"Stdout:\n{stdout}\n\n"
             f"Stderr:\n{stderr}"
         )
+
+
+def exponential_backoff(
+    failures: int,
+    base: float = .5,
+    exponent: float = 2.
+) -> float:
+    return base * failures ** exponent
+
+
+def simple_retry_rule(
+    max_attempts: Optional[int] = 4,
+    backoff: Callable[[int], float] = exponential_backoff
+):
+    def rule(failures: int, error: Exception):
+        if max_attempts is not None and failures >= max_attempts:
+            return None
+        return backoff(failures)
+
+    return rule
+
+
+RetryRule = Callable[[int, Exception], Optional[float]]
+
+
+def async_retry(
+    func: Optional[Callable] = None,
+    *,
+    rule: Optional[RetryRule] = None
+):
+    if rule is None:
+        rule = simple_retry_rule()
+
+    def dec(f):
+
+        @wraps(f)
+        async def wrapper(*args, **kwargs):
+            failures = 0
+            while True:
+                try:
+                    return await f(*args, **kwargs)
+                except Exception as err:
+                    failures += 1
+                    sleep_for = rule(failures, err)
+                    if sleep_for is None:
+                        raise
+                    await asyncio.sleep(sleep_for)
+        
+        return wrapper
+
+    if func is None:
+        return dec
+
+    return dec(func)

@@ -25,6 +25,7 @@ class ProcessMonitor(abc.ABC):
         pid: int,
         output_path: str,
         log_path: str,
+        log_level: str,
     ) -> MonitoredProcess:
         """ """
         raise NotImplementedError

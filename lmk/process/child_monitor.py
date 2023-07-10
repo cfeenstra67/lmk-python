@@ -1,10 +1,15 @@
 import asyncio
+import logging
 import os
 import pty
+import shlex
 from typing import List
 
 from lmk.process.monitor import ProcessMonitor, MonitoredProcess
 from lmk.utils import wait_for_fd
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MonitoredChildProcess(MonitoredProcess):
@@ -56,7 +61,7 @@ class ChildMonitor(ProcessMonitor):
         self.argv = argv
 
     async def attach(
-        self, pid: int, output_path: str, log_path: str
+        self, pid: int, output_path: str, log_path: str, log_level: str,
     ) -> MonitoredChildProcess:
         read_output, write_output = pty.openpty()
 
@@ -68,4 +73,5 @@ class ChildMonitor(ProcessMonitor):
             bufsize=0,
             start_new_session=True,
         )
+        LOGGER.debug("Created child process: [%s], pid: %d", shlex.join(self.argv), proc.pid)
         return MonitoredChildProcess(proc, self.argv, read_output, output_path)

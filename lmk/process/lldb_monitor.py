@@ -71,30 +71,33 @@ class LLDBMonitoredProcess(MonitoredProcess):
                 await asyncio.wait(
                     [stdout_line, wait_task], return_when=asyncio.FIRST_COMPLETED
                 )
-                if stdout_line.done():
-                    message = json.loads(stdout_line.result())
-                    if message.get("type") == "exit":
-                        return message["exit_code"]
-                    LOGGER.warn(
-                        "Unhandled message from monitor process: %s",
-                        message.get("type"),
-                    )
-                    stdout_line = asyncio.create_task(self.process.stdout.readline())
-
                 if wait_task.done():
                     exit_code = wait_task.result()
                     LOGGER.error("Monitor process exited with code: %s", exit_code)
                     return -1
+
+                if stdout_line.done():
+                    line = stdout_line.result()
+                    try:
+                        message = json.loads(line)
+                    except json.JSONDecodeError:
+                        LOGGER.exception("Invalid message from LLDB monitor process: %s", line)
+                    else:
+                        if message.get("type") == "exit":
+                            return message["exit_code"]
+                        LOGGER.warn(
+                            "Unhandled message from monitor process: %s",
+                            message.get("type"),
+                        )
+                    stdout_line = asyncio.create_task(self.process.stdout.readline())
         finally:
             self.log_file.close()
 
 
 class LLDBProcessMonitor(ProcessMonitor):
-    def __init__(self, log_level: str = "ERROR") -> None:
-        self.log_level = log_level
 
     async def attach(
-        self, pid: int, output_path: str, log_path: str
+        self, pid: int, output_path: str, log_path: str, log_level: str
     ) -> MonitoredProcess:
         log_file = open(log_path, "ab+", buffering=0)
 
@@ -102,7 +105,7 @@ class LLDBProcessMonitor(ProcessMonitor):
             pass
 
         process = await run_with_lldb(
-            [MONITOR_SCRIPT_PATH, "-l", self.log_level, str(pid), output_path],
+            [MONITOR_SCRIPT_PATH, "-l", log_level, str(pid), output_path],
             log_file,
         )
         wait_task = asyncio.create_task(process.wait())

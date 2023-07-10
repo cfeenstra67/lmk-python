@@ -1,7 +1,8 @@
-import json
 from typing import Union, Any
 
 import aiohttp
+
+from lmk.utils.ws import WebSocket
 
 
 async def send_signal(socket_path: str, signal: Union[str, int]) -> None:
@@ -29,21 +30,18 @@ async def set_notify_on(socket_path: str, notify_on: str) -> None:
 async def wait_for_job(socket_path: str, wait_for: str = "run") -> Any:
     connector = aiohttp.UnixConnector(path=socket_path)
     async with aiohttp.ClientSession(connector=connector) as session:
-        while True:
-            async with session.ws_connect(
-                f"http://daemon/wait?wait_for={wait_for}",
-                timeout=0.5
-            ) as ws:
-                async for message in ws:
-                    if message.type == aiohttp.WSMsgType.TEXT:
-                        response = json.loads(message.data)
-                        if not response["ok"]:
-                            raise Exception(f"{response['error_type']}: {response['error']}")
-                        return response
-                    elif message.type == aiohttp.WSMsgType.CLOSE:
-                        break
-                    elif message.type == aiohttp.WSMsgType.ERROR:
-                        break
+        # async with session.ws_connect(f"http://daemon/wait?wait_for={wait_for}") as ws:
+        #     async for message in ws:
+        #         if message.type != aiohttp.WSMsgType.TEXT:
+        #             response = json.loads(message.data)
+        #             if not response["ok"]:
+        #                 raise Exception(f"{response['error_type']}: {response['error']}")
+        #             return response
+        async with WebSocket(session, f"http://daemon/wait?wait_for={wait_for}") as ws:
+            async for message in ws:
+                if not message["ok"]:
+                    raise Exception(f"{message['error_type']}: {message['error']}")
+                return message
 
 
 class ResponseError(Exception):

@@ -44,6 +44,7 @@ from lmk.generated.models.notification_channel_response import (
 from lmk.generated.models.create_session_request_state import CreateSessionRequestState
 from lmk.generated.models.session_response import SessionResponse
 from lmk.jupyter import is_jupyter, run_javascript
+from lmk.utils.ws import WebSocket
 
 
 LOGGER = logging.getLogger(__name__)
@@ -530,14 +531,14 @@ class Instance:
         )
 
     @contextlib.asynccontextmanager
-    async def session_connect(self, session_id: str, read_only: bool = True) -> AsyncContextManager[aiohttp.ClientWebSocketResponse]:
+    async def session_connect(self, session_id: str, read_only: bool = True) -> AsyncContextManager[WebSocket]:
         access_token = await self._get_access_token_async()
 
         url = self.client.configuration.host + f"/v1/session/ws?token={access_token}"
 
         async with aiohttp.ClientSession() as session:
-            async with session.ws_connect(url) as ws:
-                await ws.send_json({
+            async with WebSocket(session, url) as ws:
+                await ws.send({
                     "event": "connect",
                     "data": {
                         "sessionId": session_id,
