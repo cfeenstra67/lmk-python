@@ -188,6 +188,7 @@ class ProcessMonitorController:
         LOGGER.info("Created session: %s", self.session.session_id)
 
         async with instance.session_connect(self.session.session_id, False) as ws:
+            LOGGER.debug("Connected to session: %s", self.session.session_id)
 
             async def handle_updates():
                 while True:
@@ -238,7 +239,9 @@ class ProcessMonitorController:
             try:
                 yield
             finally:
-                await asyncio.wait([updates_task, messages_task])
+                LOGGER.debug("Waiting for session tasks")
+                await asyncio.gather(updates_task, messages_task)
+                LOGGER.debug("Session tasks are done")
                 await instance.end_session(
                     self.session.session_id,
                     async_req=True
@@ -292,6 +295,8 @@ class ProcessMonitorController:
                 self.attached_event.set()
 
                 await stack.enter_async_context(self._session_ctx())
+
+                LOGGER.debug("Entered session context: %s", self.session.session_id)
 
                 exit_code = await self.process.wait()
             except Exception as err:
@@ -425,18 +430,22 @@ class ProcessMonitorDaemon(multiprocessing.Process):
         # signals
         os.setsid()
 
-        log_path = os.path.join(self.controller.output_dir, "lmk.log")
-        with open(log_path, "a+") as log_stream:
-            setup_logging(log_stream=log_stream, level=self.log_level)
+        try:
+            log_path = os.path.join(self.controller.output_dir, "lmk.log")
+            with open(log_path, "a+") as log_stream:
+                setup_logging(log_stream=log_stream, level=self.log_level)
 
-            with pid_ctx(self.pid_file, self.pid):
-                loop = asyncio.new_event_loop()
+                with pid_ctx(self.pid_file, self.pid):
+                    loop = asyncio.new_event_loop()
 
-                try:
-                    loop.run_until_complete(self.controller.run(log_path, self.log_level))
-                finally:
-                    loop.run_until_complete(loop.shutdown_asyncgens())
-                    loop.close()
+                    try:
+                        loop.run_until_complete(self.controller.run(log_path, self.log_level))
+                    finally:
+                        loop.run_until_complete(loop.shutdown_asyncgens())
+                        loop.close()
+        except:
+            LOGGER.exception("Error running process monitor daemon")
+            raise
 
 
 class ProcessNotAttached(Exception):

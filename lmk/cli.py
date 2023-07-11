@@ -1,6 +1,7 @@
 import click
 import os
 import psutil
+import shlex
 import signal as signal_module
 import sys
 import textwrap
@@ -78,7 +79,14 @@ async def run(
     name: Optional[str],
     notify: str,
 ):
-    if name is None and command:
+    if not command:
+        click.secho("No command provided", fg="red")
+        raise click.Abort
+
+    head, *tail = command
+    command = shlex.split(head) + tail
+
+    if name is None:
         name = command[0]
 
     manager = ctx.obj["manager"]

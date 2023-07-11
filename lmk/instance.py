@@ -536,8 +536,9 @@ class Instance:
 
         url = self.client.configuration.host + f"/v1/session/ws?token={access_token}"
 
-        async with aiohttp.ClientSession() as session:
-            async with WebSocket(session, url) as ws:
+        async with aiohttp.ClientSession(conn_timeout=10) as session:
+            async with WebSocket(session, url, timeout=.5, heartbeat=1) as ws:
+                LOGGER.debug("Session websocket connected for %s", session_id)
                 await ws.send({
                     "event": "connect",
                     "data": {
@@ -545,6 +546,7 @@ class Instance:
                         "readOnly": read_only
                     }
                 })
+                LOGGER.debug("Sent connected message for %s", session_id)
 
                 yield ws
 

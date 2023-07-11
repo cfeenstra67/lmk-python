@@ -219,12 +219,13 @@ def async_retry(
                 try:
                     return await f(*args, **kwargs)
                 except Exception as err:
+                    LOGGER.debug("Error in async_retry", exc_info=True)
                     failures += 1
                     sleep_for = rule(failures, err)
                     if sleep_for is None:
                         raise
                     await asyncio.sleep(sleep_for)
-        
+
         return wrapper
 
     if func is None:

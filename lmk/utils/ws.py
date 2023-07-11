@@ -65,6 +65,7 @@ class WebSocket:
                     **self.kwargs
                 )
                 self.ws = await self.ws_ctx.__aenter__()
+                LOGGER.debug("Initialized web socket")
             except:
                 LOGGER.exception("ERROR")
                 self.ws_ctx = None
@@ -175,8 +176,12 @@ class WebSocket:
 
         queue_task = asyncio.create_task(queue_get())
 
+        close_task = asyncio.create_task(self.close_event.wait())
+
         while True:
-            await asyncio.wait([connect_task, queue_task], return_when=asyncio.FIRST_COMPLETED)
+            LOGGER.debug("Before loop")
+            await asyncio.wait([connect_task, queue_task, close_task], return_when=asyncio.FIRST_COMPLETED)
+            LOGGER.debug("Loop; connected: %s, queue: %s", connect_task.done(), queue_task.done())
 
             if queue_task.done():
                 result = queue_task.result()
@@ -184,17 +189,16 @@ class WebSocket:
                     buffer.append(queue_task.result())
                 queue_task = asyncio.create_task(queue_get())
 
-            if connect_task.done():
-                while buffer and self.ws is not None:
-                    item, future = buffer.pop(0)
-                    await self.ws.send_json(item)
-                    future.set_result(None)
-                    self.queue.task_done()
+            while buffer and self.ws is not None:
+                item, future = buffer.pop(0)
+                await self.ws.send_json(item)
+                future.set_result(None)
+                self.queue.task_done()
 
-                if self.ws is None:
-                    connect_task = wait_for_signal(ws_connected, self)
-            
-            if self.close_event.is_set():
+            if connect_task.done():
+                connect_task = wait_for_signal(ws_connected, self)
+
+            if close_task.done():
                 break
 
     async def __aiter__(self):
